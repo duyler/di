@@ -3,8 +3,9 @@
 namespace Konveyer\DependencyInjection\Exception;
 
 use Exception;
+use Psr\Container\ContainerExceptionInterface;
 
-class InterfaceMapNotFoundException extends Exception
+class InterfaceMapNotFoundException extends Exception implements ContainerExceptionInterface
 {
     public function __construct(string $interfaceName)
     {

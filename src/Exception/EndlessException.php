@@ -3,8 +3,9 @@
 namespace Konveyer\DependencyInjection\Exception;
 
 use Exception;
+use Psr\Container\ContainerExceptionInterface;
 
-class EndlessException extends Exception
+class EndlessException extends Exception implements ContainerExceptionInterface
 {
     public function __construct($className, $depClassName)
     {
