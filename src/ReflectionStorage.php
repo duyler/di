@@ -9,7 +9,7 @@ use ReflectionClass;
 class ReflectionStorage
 {
     /**
-     * @var array[ReflectionClass]
+     * @var ReflectionClass[]
      */
     private array $reflections = [];
 
