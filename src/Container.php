@@ -4,19 +4,11 @@ declare(strict_types=1);
 
 namespace Konveyer\DependencyInjection;
 
-use Konveyer\DependencyInjection\Exception\EndlessException;
 use Konveyer\DependencyInjection\Exception\NotFoundException;
-use Konveyer\DependencyInjection\Exception\InterfaceMapNotFoundException;
 use Konveyer\DependencyInjection\Exception\DefinitionIsNotObjectTypeException;
 
-use function array_key_exists;
 use function is_object;
-use function count;
-use function current;
-use function end;
-use function key;
-use function prev;
-use function array_merge;
+use function interface_exists;
 
 class Container implements ContainerInterface
 {
@@ -29,7 +21,7 @@ class Container implements ContainerInterface
         $this->dependencyMapper = $dependencyMapper;
     }
 
-    public function get($className)
+    public function get($className): mixed
     {
         if (!isset($this->definitions[$className])) {
             throw new NotFoundException($className);
