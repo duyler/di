@@ -5,6 +5,7 @@
 
 The container can be used both in automatic mode, using type hints in class constructors, and accept fine-tuning using providers.
 
+
 **Example automatically make instance**
 
 ```
@@ -62,3 +63,4 @@ $container->setProviders(
 );
 
 $yourClassObject = $container->make(YouClass::class);
+
