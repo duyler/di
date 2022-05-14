@@ -44,7 +44,6 @@ class Container implements ContainerInterface
         $this->definitions[$className] = $definition;
     }
 
-    // TODO скорее всего будут проблемы с Enum
     public function make(string $className, string $provider = '', bool $singleton = true): mixed
     {
         $this->compiler->singleton($singleton);

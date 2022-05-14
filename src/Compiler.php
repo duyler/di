@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Konveyer\DependencyInjection;
 
-use Konveyer\DependencyInjection\Provider\ProviderInterface;
+use function key;
+use function current;
+use function prev;
+use function end;
 
 class Compiler
 {
-    // Массив объектов
     protected array $definitions = [];
     protected array $providers = [];
     protected bool $singleton = true;
@@ -98,7 +100,6 @@ class Compiler
         }
     }
 
-    // косяк, может ничего не возвращать
     protected function getDefinition(string $className): null|object
     {
         if ($this->singleton && $this->hasDefinition($className)) {

@@ -97,7 +97,7 @@ class DependencyMapper
             $paramArgClassName = $param->getName();
 
             // Если в параметрах есть зависимость то получаем её
-            if (null !== $class) {
+            if ($class !== null) {
 
                 if ($class->isInterface()) {
 
@@ -136,7 +136,6 @@ class DependencyMapper
             throw new EndlessException($className, $depClassName);
         }
 
-        // Проверять на интерфейс
         $this->dependencies[$className][$depArgName] = $depClassName;
         $this->prepareDependencies($depClassName);
     }
