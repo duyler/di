@@ -61,7 +61,6 @@ class Container implements ContainerInterface
             $this->setProviders([$className => $provider]);
         }
 
-        // Костыль для интерфейсов
         if (interface_exists($className)) {
             $className = $this->dependencyMapper->getBind($className);
         }

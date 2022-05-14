@@ -86,12 +86,10 @@ class DependencyMapper
 
             $paramClassName = $type->getName();
 
-            // Хз, как правильно сделать. Нужны тесты
             if (class_exists($paramClassName) === false && interface_exists($paramClassName) === false) {
                 continue;
             }
-
-
+            
             $this->reflectionStorage->set($paramClassName, new ReflectionClass($paramClassName));
 
             $class = $this->reflectionStorage->get($paramClassName);

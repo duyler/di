@@ -9,22 +9,22 @@ use ReflectionClass;
 class ReflectionStorage
 {
     /**
-     * @var array[Reflection]
+     * @var array[ReflectionClass]
      */
     private array $reflections = [];
 
-    public function get(string $dependencyClassName): ReflectionClass
+    public function get(string $reflectionClassName): ReflectionClass
     {
-        return $this->reflections[$dependencyClassName];
+        return $this->reflections[$reflectionClassName];
     }
 
-    public function set(string $dependencyClassName, ReflectionClass $reflection): void
+    public function set(string $reflectionClassName, ReflectionClass $reflection): void
     {
-        $this->reflections[$dependencyClassName] = $reflection;
+        $this->reflections[$reflectionClassName] = $reflection;
     }
 
-    public function has(string $dependencyClassName): bool
+    public function has(string $reflectionClassName): bool
     {
-        return isset($this->reflections[$dependencyClassName]);
+        return isset($this->reflections[$reflectionClassName]);
     }
 }
