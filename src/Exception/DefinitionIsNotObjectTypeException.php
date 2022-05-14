@@ -3,8 +3,9 @@
 namespace Konveyer\DependencyInjection\Exception;
 
 use Exception;
+use Psr\Container\ContainerExceptionInterface;
 
-class DefinitionIsNotObjectTypeException extends Exception
+class DefinitionIsNotObjectTypeException extends Exception implements ContainerExceptionInterface
 {
     public function __construct($type)
     {
