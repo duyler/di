@@ -8,12 +8,13 @@ use Duyler\DependencyInjection\Exception\NotFoundException;
 use Duyler\DependencyInjection\Exception\DefinitionIsNotObjectTypeException;
 
 use function is_object;
+use function interface_exists;
 
 class Container implements ContainerInterface
 {
     protected Compiler $compiler;
-    protected array $definitions = [];
     protected DependencyMapper $dependencyMapper;
+    protected array $definitions = [];
 
     public function __construct(Compiler $compiler, DependencyMapper $dependencyMapper)
     {
