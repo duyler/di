@@ -43,6 +43,35 @@ class Compiler
         return $this->definitions;
     }
 
+    public function setDefinition(string $className, $definition): void
+    {
+        if ($this->singleton) {
+            if (isset($this->definitions[$className]) === false) {
+                $this->definitions[$className] = $definition;
+            }
+        } else {
+            $this->tmp[$className] = $definition;
+        }
+    }
+
+    public function getDefinition(string $className): object
+    {
+        if ($this->singleton && $this->hasDefinition($className)) {
+            return $this->definitions[$className];
+        }
+
+        return $this->tmp[$className];
+    }
+
+    public function hasDefinition(string $className): bool
+    {
+        if ($this->singleton) {
+            return isset($this->definitions[$className]);
+        }
+
+        return isset($this->tmp[$className]);
+    }
+
     protected function iterateDependenciesTree(): void
     {
         $deps = end($this->dependenciesTree);
@@ -90,32 +119,8 @@ class Compiler
             $params = $provider->getParams();
         }
 
-        $this->setDefinition($className, new $className(...$params = $params + $dependencies));
-    }
-
-    protected function setDefinition(string $className, $definition): void
-    {
-        if ($this->singleton && !isset($this->definitions[$className])) {
-            $this->definitions[$className] = $definition;
-        } else {
-            $this->tmp[$className] = $definition;
+        if ($this->hasDefinition($className) === false) {
+            $this->setDefinition($className, new $className(...$params + $dependencies));
         }
-    }
-
-    protected function getDefinition(string $className): object
-    {
-        if ($this->singleton && $this->hasDefinition($className)) {
-            return $this->definitions[$className];
-        }
-
-        return $this->tmp[$className];
-    }
-
-    protected function hasDefinition(string $className): bool
-    {
-        if ($this->singleton) {
-            return isset($this->definitions[$className]);
-        }
-        return isset($this->tmp[$className]);
     }
 }

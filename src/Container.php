@@ -14,7 +14,6 @@ class Container implements ContainerInterface
 {
     protected Compiler $compiler;
     protected DependencyMapper $dependencyMapper;
-    protected array $definitions = [];
 
     public function __construct(Compiler $compiler, DependencyMapper $dependencyMapper)
     {
@@ -22,17 +21,17 @@ class Container implements ContainerInterface
         $this->dependencyMapper = $dependencyMapper;
     }
 
-    public function get(string $id): mixed
+    public function get(string $id): object
     {
-        if (!isset($this->definitions[$id])) {
+        if ($this->has($id) === false) {
             throw new NotFoundException($id);
         }
-        return $this->definitions[$id];
+        return $this->compiler->getDefinition($id);
     }
 
     public function has(string $id): bool
     {
-        return isset($this->definitions[$id]);
+        return $this->compiler->hasDefinition($id);
     }
 
     public function set($definition): void
@@ -40,9 +39,8 @@ class Container implements ContainerInterface
         if (!is_object($definition)) {
             throw new DefinitionIsNotObjectTypeException(gettype($definition));
         }
-        $className = $definition::class;
 
-        $this->definitions[$className] = $definition;
+        $this->compiler->setDefinition($definition::class, $definition);
     }
 
     public function make(string $className, string $provider = '', bool $singleton = true): mixed
@@ -78,7 +76,7 @@ class Container implements ContainerInterface
     {
         $dependenciesTree = $this->dependencyMapper->resolve($className);
 
-        $this->definitions = $this->compiler->compile($className, $dependenciesTree);
+        $this->compiler->compile($className, $dependenciesTree);
 
         return $this->get($className);
     }
