@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Konveyer\DependencyInjection;
+namespace Duyler\DependencyInjection;
 
-use Konveyer\DependencyInjection\Exception\NotFoundException;
-use Konveyer\DependencyInjection\Exception\DefinitionIsNotObjectTypeException;
+use Duyler\DependencyInjection\Exception\NotFoundException;
+use Duyler\DependencyInjection\Exception\DefinitionIsNotObjectTypeException;
 
 use function is_object;
-use function interface_exists;
 
 class Container implements ContainerInterface
 {
     protected Compiler $compiler;
+    protected array $definitions = [];
     protected DependencyMapper $dependencyMapper;
 
     public function __construct(Compiler $compiler, DependencyMapper $dependencyMapper)
@@ -21,17 +21,17 @@ class Container implements ContainerInterface
         $this->dependencyMapper = $dependencyMapper;
     }
 
-    public function get($className): mixed
+    public function get(string $id): mixed
     {
-        if (!isset($this->definitions[$className])) {
-            throw new NotFoundException($className);
+        if (!isset($this->definitions[$id])) {
+            throw new NotFoundException($id);
         }
-        return $this->definitions[$className];
+        return $this->definitions[$id];
     }
 
-    public function has($className): bool
+    public function has(string $id): bool
     {
-        return isset($this->definitions[$className]);
+        return isset($this->definitions[$id]);
     }
 
     public function set($definition): void
@@ -66,20 +66,11 @@ class Container implements ContainerInterface
 
     public function setProviders(array $providers): void
     {
-        $resolvedProviders = $this->prepareProviders($providers);
-        $this->compiler->setProviders($resolvedProviders);
-        $this->dependencyMapper->setProviders($resolvedProviders);
-    }
-
-    protected function prepareProviders(array $providers): array
-    {
-        $resolvedProviders = [];
-
         foreach ($providers as $bindClassName => $providerClassName) {
-            $resolvedProviders[$bindClassName] = $this->makeRequiredObject($providerClassName);
+            $provider = $this->makeRequiredObject($providerClassName);
+            $this->compiler->addProvider($bindClassName, $provider);
+            $this->dependencyMapper->addProvider($bindClassName, $provider);
         }
-
-        return $resolvedProviders;
     }
 
     protected function makeRequiredObject(string $className): mixed

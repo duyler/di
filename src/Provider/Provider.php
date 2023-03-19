@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Konveyer\DependencyInjection\Provider;
+namespace Duyler\DependencyInjection\Provider;
 
 abstract class Provider implements ProviderInterface
 {

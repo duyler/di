@@ -9,7 +9,7 @@ The container can be used both in automatic mode, using type hints in class cons
 **Example automatically make instance**
 
 ```
-use Konveyer\DependencyInjection\ContainerBuilder;
+use Duyler\DependencyInjection\ContainerBuilder;
 use YourClass;
 
 $container = ContainerBuilder::build();
@@ -35,7 +35,7 @@ class YourClass
 ```
 
 ```
-use Konveyer\DependencyInjection\Provider\Provider
+use Duyler\DependencyInjection\Provider\Provider
 
 class ClassProvider extends Provider
 {
@@ -58,9 +58,9 @@ or
 
 ```
 
-$container->setProviders(
+$container->setProviders([
     YouClass::class => ClassProvider::class,
-);
+]);
 
 $yourClassObject = $container->make(YouClass::class);
 
