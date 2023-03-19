@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Konveyer\DependencyInjection;
+namespace Duyler\DependencyInjection;
 
+use Duyler\DependencyInjection\Provider\ProviderInterface;
+
+use function end;
 use function key;
 use function current;
 use function prev;
-use function end;
 
 class Compiler
 {
@@ -15,15 +17,16 @@ class Compiler
     protected array $providers = [];
     protected bool $singleton = true;
     protected array $dependenciesTree = [];
+    protected array $tmp = [];
 
     public function singleton(bool $flag): void
     {
         $this->singleton = $flag;
     }
 
-    public function setProviders(array $providers): void
+    public function addProvider(string $id, ProviderInterface $provider): void
     {
-        $this->providers = $this->providers + $providers;
+        $this->providers[$id] = $provider;
     }
 
     public function compile(string $className, array $dependenciesTree = []): array
@@ -40,7 +43,6 @@ class Compiler
         return $this->definitions;
     }
 
-    // Проходит по массиву (дереву) зависимостей
     protected function iterateDependenciesTree(): void
     {
         $deps = end($this->dependenciesTree);
@@ -100,16 +102,13 @@ class Compiler
         }
     }
 
-    protected function getDefinition(string $className): null|object
+    protected function getDefinition(string $className): object
     {
         if ($this->singleton && $this->hasDefinition($className)) {
             return $this->definitions[$className];
         }
 
-        if ($this->hasDefinition($className)) {
-            return $this->tmp[$className];
-        }
-        return null;
+        return $this->tmp[$className];
     }
 
     protected function hasDefinition(string $className): bool

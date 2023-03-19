@@ -22,12 +22,12 @@
     "minimum-stability": "dev",
     "autoload": {
         "psr-4": {
-            "Konveyer\\DependencyInjection\\": "src/"
+            "Duyler\\DependencyInjection\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Konveyer\\DependencyInjection\\Test\\": ["tests/"]
+            "Duyler\\DependencyInjection\\Test\\": ["tests/"]
         }
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Konveyer\DependencyInjection\Exception;
+namespace Duyler\DependencyInjection\Exception;
 
 use Exception;
 use Psr\Container\NotFoundExceptionInterface;

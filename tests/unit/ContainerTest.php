@@ -3,11 +3,11 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
-use Konveyer\DependencyInjection\Container;
-use Konveyer\DependencyInjection\Compiler;
-use Konveyer\DependencyInjection\DependencyMapper;
-use Konveyer\DependencyInjection\Exception\NotFoundException;
-use Konveyer\DependencyInjection\Exception\DefinitionIsNotObjectTypeException;
+use Duyler\DependencyInjection\Container;
+use Duyler\DependencyInjection\Compiler;
+use Duyler\DependencyInjection\DependencyMapper;
+use Duyler\DependencyInjection\Exception\NotFoundException;
+use Duyler\DependencyInjection\Exception\DefinitionIsNotObjectTypeException;
 
 class ContainerTest extends TestCase
 {

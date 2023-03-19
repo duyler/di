@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Konveyer\DependencyInjection;
+namespace Duyler\DependencyInjection;
 
 use Psr\Container\ContainerInterface as PsrContainerInterface;
 
