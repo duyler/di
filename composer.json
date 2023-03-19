@@ -1,10 +1,11 @@
 {
-    "name": "konveyer/dependency-injection",
+    "name": "duyler/dependency-injection",
     "type": "library",
     "description": "Dependency injection container",
     "license": "MIT",
     "keywords": [
-        "di"
+        "di",
+        "dependency-injection"
     ],
     "authors": [
         {
