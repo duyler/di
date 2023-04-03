@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Duyler\DependencyInjection\ServiceStorage;
 use Duyler\DependencyInjection\Container;
@@ -35,18 +36,14 @@ class ContainerTest extends TestCase
         $this->assertTrue($this->container->has('AnotherClassName'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function has_with_false()
     {
         $this->serviceStorage->method('has')->willReturn(false);
         $this->assertFalse($this->container->has('AnotherClassName'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function get_with_definition()
     {
         $definition = new stdClass();
@@ -57,9 +54,7 @@ class ContainerTest extends TestCase
         $this->assertSame($this->container->get(stdClass::class), $definition);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function get_with_undefined_definition()
     {
         $this->serviceStorage->method('has')->willReturn(false);
@@ -67,9 +62,7 @@ class ContainerTest extends TestCase
         $this->container->get('AnotherClassName');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function set_with_non_object_type()
     {
         $this->expectException(DefinitionIsNotObjectTypeException::class);
