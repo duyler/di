@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Duyler\DependencyInjection;
 
-use Duyler\DependencyInjection\Exception\EndlessException;
+use Duyler\DependencyInjection\Exception\CircularReferenceException;
 use Duyler\DependencyInjection\Exception\InterfaceMapNotFoundException;
 use Duyler\DependencyInjection\Provider\ProviderInterface;
 use ReflectionClass;
@@ -123,7 +123,7 @@ class DependencyMapper
     protected function resolveDependency(string $className, string $depClassName, string $depArgName = ''): void
     {
         if (isset($this->dependencies[$depClassName][$className])) {
-            throw new EndlessException($className, $depClassName);
+            throw new CircularReferenceException($className, $depClassName);
         }
 
         $this->dependencies[$className][$depArgName] = $depClassName;

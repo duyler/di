@@ -5,7 +5,7 @@ namespace Duyler\DependencyInjection\Exception;
 use Exception;
 use Psr\Container\ContainerExceptionInterface;
 
-class EndlessException extends Exception implements ContainerExceptionInterface
+class CircularReferenceException extends Exception implements ContainerExceptionInterface
 {
     public function __construct($className, $depClassName)
     {

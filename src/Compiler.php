@@ -13,11 +13,17 @@ use function prev;
 
 class Compiler
 {
+    protected ServiceStorage $serviceStorage;
     protected array $definitions = [];
     protected array $providers = [];
     protected bool $singleton = true;
     protected array $dependenciesTree = [];
     protected array $tmp = [];
+
+    public function __construct(ServiceStorage $serviceStorage)
+    {
+        $this->serviceStorage = $serviceStorage;
+    }
 
     public function singleton(bool $flag): void
     {
@@ -29,25 +35,24 @@ class Compiler
         $this->providers[$id] = $provider;
     }
 
-    public function compile(string $className, array $dependenciesTree = []): array
+    public function compile(string $className, array $dependenciesTree = []): void
     {
         $this->dependenciesTree = $dependenciesTree;
+        $this->tmp = [];
 
         if (empty($this->dependenciesTree)) {
             $this->instanceClass($className);
-            return $this->definitions;
+            return;
         }
 
         $this->iterateDependenciesTree();
-
-        return $this->definitions;
     }
 
     public function setDefinition(string $className, $definition): void
     {
         if ($this->singleton) {
-            if (isset($this->definitions[$className]) === false) {
-                $this->definitions[$className] = $definition;
+            if ($this->serviceStorage->has($className) === false) {
+                $this->serviceStorage->set($className, $definition);
             }
         } else {
             $this->tmp[$className] = $definition;
@@ -57,7 +62,7 @@ class Compiler
     public function getDefinition(string $className): object
     {
         if ($this->singleton && $this->hasDefinition($className)) {
-            return $this->definitions[$className];
+            return $this->serviceStorage->get($className);
         }
 
         return $this->tmp[$className];
@@ -66,7 +71,7 @@ class Compiler
     public function hasDefinition(string $className): bool
     {
         if ($this->singleton) {
-            return isset($this->definitions[$className]);
+            return $this->serviceStorage->has($className);
         }
 
         return isset($this->tmp[$className]);
