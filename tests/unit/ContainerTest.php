@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
+use Duyler\DependencyInjection\ServiceStorage;
 use Duyler\DependencyInjection\Container;
 use Duyler\DependencyInjection\Compiler;
 use Duyler\DependencyInjection\DependencyMapper;
@@ -14,25 +15,45 @@ class ContainerTest extends TestCase
     private Container $container;
     private Compiler $compiler;
     private DependencyMapper $dependencyMapper;
+    private ServiceStorage $serviceStorage;
+
+    protected function setUp(): void
+    {
+        $this->compiler = $this->createMock(Compiler::class);
+        $this->dependencyMapper = $this->createMock(DependencyMapper::class);
+        $this->serviceStorage = $this->createMock(ServiceStorage::class);
+        $this->container = new Container($this->compiler, $this->dependencyMapper, $this->serviceStorage);
+        parent::setUp();
+    }
 
     /**
      * @test
      */
-    public function set_and_has_with_object_type()
+    public function has_with_true()
     {
-        $definition = new stdClass();
-        $this->container->set($definition);
-        $this->assertTrue($this->container->has(stdClass::class));
+        $this->serviceStorage->method('has')->willReturn(true);
+        $this->assertTrue($this->container->has('AnotherClassName'));
+    }
+
+    /**
+     * @test
+     */
+    public function has_with_false()
+    {
+        $this->serviceStorage->method('has')->willReturn(false);
         $this->assertFalse($this->container->has('AnotherClassName'));
     }
 
     /**
      * @test
      */
-    public function set_and_get_with_definition()
+    public function get_with_definition()
     {
         $definition = new stdClass();
-        $this->container->set($definition);
+
+        $this->serviceStorage->method('has')->willReturn(true);
+        $this->serviceStorage->method('get')->willReturn($definition);
+
         $this->assertSame($this->container->get(stdClass::class), $definition);
     }
 
@@ -41,6 +62,7 @@ class ContainerTest extends TestCase
      */
     public function get_with_undefined_definition()
     {
+        $this->serviceStorage->method('has')->willReturn(false);
         $this->expectException(NotFoundException::class);
         $this->container->get('AnotherClassName');
     }
@@ -52,13 +74,5 @@ class ContainerTest extends TestCase
     {
         $this->expectException(DefinitionIsNotObjectTypeException::class);
         $this->container->set([]);
-    }
-
-    protected function setUp(): void
-    {
-        $this->compiler = $this->createMock(Compiler::class);
-        $this->dependencyMapper = $this->createMock(DependencyMapper::class);
-        $this->container = new Container($this->compiler, $this->dependencyMapper);
-        parent::setUp();
     }
 }

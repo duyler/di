@@ -9,6 +9,7 @@ class ContainerBuilder
     public static function build(): Container
     {
         $reflectionStorage = new ReflectionStorage();
-        return new Container(new Compiler(), new DependencyMapper($reflectionStorage));
+        $serviceStorage = new ServiceStorage();
+        return new Container(new Compiler($serviceStorage), new DependencyMapper($reflectionStorage), $serviceStorage);
     }
 }

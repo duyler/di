@@ -6,33 +6,30 @@ namespace Duyler\DependencyInjection;
 
 use Duyler\DependencyInjection\Exception\NotFoundException;
 use Duyler\DependencyInjection\Exception\DefinitionIsNotObjectTypeException;
-
+use InvalidArgumentException;
 use function is_object;
 use function interface_exists;
 
 class Container implements ContainerInterface
 {
-    protected Compiler $compiler;
-    protected DependencyMapper $dependencyMapper;
-    protected array $definitions = [];
-
-    public function __construct(Compiler $compiler, DependencyMapper $dependencyMapper)
-    {
-        $this->compiler = $compiler;
-        $this->dependencyMapper = $dependencyMapper;
+    public function __construct(
+        protected readonly Compiler $compiler,
+        protected readonly DependencyMapper $dependencyMapper,
+        protected readonly ServiceStorage $serviceStorage
+    ) {
     }
 
-    public function get(string $id): mixed
+    public function get(string $id): object
     {
-        if (!isset($this->definitions[$id])) {
+        if ($this->has($id) === false) {
             throw new NotFoundException($id);
         }
-        return $this->definitions[$id];
+        return $this->serviceStorage->get($id);
     }
 
     public function has(string $id): bool
     {
-        return isset($this->definitions[$id]);
+        return $this->serviceStorage->has($id);
     }
 
     public function set($definition): void
@@ -40,9 +37,15 @@ class Container implements ContainerInterface
         if (!is_object($definition)) {
             throw new DefinitionIsNotObjectTypeException(gettype($definition));
         }
-        $className = $definition::class;
 
-        $this->definitions[$className] = $definition;
+        $className = $definition::class;
+        if ($this->has($className)) {
+            throw new InvalidArgumentException(
+                sprintf('The "%s" service is already initialized, you cannot replace it.', $className)
+            );
+        }
+
+        $this->serviceStorage->set($className, $definition);
     }
 
     public function make(string $className, string $provider = '', bool $singleton = true): mixed
@@ -78,8 +81,12 @@ class Container implements ContainerInterface
     {
         $dependenciesTree = $this->dependencyMapper->resolve($className);
 
-        $this->definitions = $this->compiler->compile($className, $dependenciesTree);
+        $this->compiler->compile($className, $dependenciesTree);
 
         return $this->get($className);
+    }
+
+    private function __clone()
+    {
     }
 }
