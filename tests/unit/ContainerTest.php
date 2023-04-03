@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Duyler\DependencyInjection\Cache\CacheHandlerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Duyler\DependencyInjection\ServiceStorage;
@@ -23,7 +24,14 @@ class ContainerTest extends TestCase
         $this->compiler = $this->createMock(Compiler::class);
         $this->dependencyMapper = $this->createMock(DependencyMapper::class);
         $this->serviceStorage = $this->createMock(ServiceStorage::class);
-        $this->container = new Container($this->compiler, $this->dependencyMapper, $this->serviceStorage);
+        $this->cacheHandler = $this->createMock(CacheHandlerInterface::class);
+        $this->container = new Container(
+            $this->compiler,
+            $this->dependencyMapper,
+            $this->serviceStorage,
+            $this->cacheHandler
+        );
+
         parent::setUp();
     }
 
