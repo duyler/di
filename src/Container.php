@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Duyler\DependencyInjection;
 
+use Duyler\DependencyInjection\Cache\CacheHandlerInterface;
+use Duyler\DependencyInjection\Exception\InvalidArgumentException;
 use Duyler\DependencyInjection\Exception\NotFoundException;
 use Duyler\DependencyInjection\Exception\DefinitionIsNotObjectTypeException;
-use InvalidArgumentException;
+use Duyler\DependencyInjection\Exception\ResolveDependenciesTreeException;
 use function is_object;
 use function interface_exists;
 
@@ -15,7 +17,8 @@ class Container implements ContainerInterface
     public function __construct(
         protected readonly Compiler $compiler,
         protected readonly DependencyMapper $dependencyMapper,
-        protected readonly ServiceStorage $serviceStorage
+        protected readonly ServiceStorage $serviceStorage,
+        protected readonly CacheHandlerInterface $cacheHandler
     ) {
     }
 
@@ -52,12 +55,12 @@ class Container implements ContainerInterface
     {
         $this->compiler->singleton($singleton);
 
-        if (!empty($provider)) {
-            $this->setProviders([$className => $provider]);
-        }
-
         if (interface_exists($className)) {
             $className = $this->dependencyMapper->getBind($className);
+        }
+
+        if (!empty($provider)) {
+            $this->setProviders([$className => $provider]);
         }
 
         return $this->makeRequiredObject($className);
@@ -79,9 +82,21 @@ class Container implements ContainerInterface
 
     protected function makeRequiredObject(string $className): mixed
     {
-        $dependenciesTree = $this->dependencyMapper->resolve($className);
+        if ($this->cacheHandler->isExists($className)) {
+            $dependenciesTree = $this->cacheHandler->get($className);
+        } else {
+            $dependenciesTree = $this->dependencyMapper->resolve($className);
+            $this->cacheHandler->record($className, $dependenciesTree);
+        }
 
-        $this->compiler->compile($className, $dependenciesTree);
+        try {
+            $this->compiler->compile($className, $dependenciesTree);
+        } catch (ResolveDependenciesTreeException $exception) {
+            $this->cacheHandler->invalidate($className);
+            $dependenciesTree = $this->dependencyMapper->resolve($className);
+            $this->cacheHandler->record($className, $dependenciesTree);
+            $this->compiler->compile($className, $dependenciesTree);
+        }
 
         return $this->get($className);
     }

@@ -8,18 +8,18 @@ use Duyler\DependencyInjection\Exception\CircularReferenceException;
 use Duyler\DependencyInjection\Exception\InterfaceMapNotFoundException;
 use Duyler\DependencyInjection\Provider\ProviderInterface;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionMethod;
 
 class DependencyMapper
 {
-    private ReflectionStorage $reflectionStorage;
     private array $classMap = [];
     private array $dependencies = [];
     private array $providers = [];
 
-    public function __construct(ReflectionStorage $reflectionStorage)
-    {
-        $this->reflectionStorage = $reflectionStorage;
+    public function __construct(
+        private readonly ReflectionStorage $reflectionStorage
+    ) {
     }
 
     public function bind(array $classMap): void
@@ -40,25 +40,30 @@ class DependencyMapper
         throw new InterfaceMapNotFoundException($interface);
     }
 
+    /**
+     * @throws \ReflectionException
+     * @throws InterfaceMapNotFoundException
+     * @throws CircularReferenceException
+     */
     public function resolve(string $className): array
     {
         $this->prepareDependencies($className);
         return $this->dependencies;
     }
 
+    /**
+     * @throws InterfaceMapNotFoundException
+     * @throws CircularReferenceException
+     * @throws ReflectionException
+     */
     protected function prepareDependencies(string $className): void
     {
-        if (isset($this->trees[$className])) {
-            $this->dependencies = $this->trees[$className];
-            return;
-        }
-
         if (!$this->reflectionStorage->has($className)) {
             $this->reflectionStorage->set($className, new ReflectionClass($className));
         }
 
         if ($this->reflectionStorage->get($className)->isInterface()) {
-            $this->prepareInterface($this->reflectionStorage->get($className), $className);
+            $className = $this->prepareInterface($this->reflectionStorage->get($className), $className);
         }
 
         $constructor = $this->reflectionStorage->get($className)->getConstructor();
@@ -68,6 +73,11 @@ class DependencyMapper
         }
     }
 
+    /**
+     * @throws InterfaceMapNotFoundException
+     * @throws CircularReferenceException
+     * @throws ReflectionException
+     */
     protected function buildDependencies(ReflectionMethod $constructor, string $className): void
     {
         foreach ($constructor->getParameters() as $param) {
@@ -105,7 +115,11 @@ class DependencyMapper
         }
     }
 
-    protected function prepareInterface(ReflectionClass $interface, string $className, string $depArgName = ''): void
+    /**
+     * @throws InterfaceMapNotFoundException
+     * @throws CircularReferenceException
+     */
+    protected function prepareInterface(ReflectionClass $interface, string $className, string $depArgName = ''):string
     {
         $depInterfaceName = $interface->getName();
 
@@ -118,8 +132,15 @@ class DependencyMapper
         $depClassName = $this->classMap[$depInterfaceName];
 
         $this->resolveDependency($className, $depClassName, $depArgName);
+
+        return $depClassName;
     }
 
+    /**
+     * @throws ReflectionException
+     * @throws InterfaceMapNotFoundException
+     * @throws CircularReferenceException
+     */
     protected function resolveDependency(string $className, string $depClassName, string $depArgName = ''): void
     {
         if (isset($this->dependencies[$depClassName][$className])) {

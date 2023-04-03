@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Duyler\DependencyInjection;
 
+use Duyler\DependencyInjection\Exception\ResolveDependenciesTreeException;
 use Duyler\DependencyInjection\Provider\ProviderInterface;
-
+use Throwable;
 use function end;
 use function key;
 use function current;
@@ -35,6 +36,9 @@ class Compiler
         $this->providers[$id] = $provider;
     }
 
+    /**
+     * @throws ResolveDependenciesTreeException
+     */
     public function compile(string $className, array $dependenciesTree = []): void
     {
         $this->dependenciesTree = $dependenciesTree;
@@ -77,6 +81,9 @@ class Compiler
         return isset($this->tmp[$className]);
     }
 
+    /**
+     * @throws ResolveDependenciesTreeException
+     */
     protected function iterateDependenciesTree(): void
     {
         $deps = end($this->dependenciesTree);
@@ -95,6 +102,9 @@ class Compiler
         }
     }
 
+    /**
+     * @throws ResolveDependenciesTreeException
+     */
     protected function instanceClass(string $className, array $deps = []): void
     {
         $dependencies = [];
@@ -125,7 +135,11 @@ class Compiler
         }
 
         if ($this->hasDefinition($className) === false) {
-            $this->setDefinition($className, new $className(...$params + $dependencies));
+            try {
+                $this->setDefinition($className, new $className(...$params + $dependencies));
+            } catch (Throwable $exception) {
+                throw new ResolveDependenciesTreeException($exception->getMessage());
+            }
         }
     }
 }

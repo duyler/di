@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Duyler\DependencyInjection\Provider;
 
-abstract class Provider implements ProviderInterface
+abstract class AbstractProvider implements ProviderInterface
 {
     public function getParams(): array
     {
