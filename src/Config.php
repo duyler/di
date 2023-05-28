@@ -9,7 +9,7 @@ use Duyler\DependencyInjection\Cache\CacheHandlerInterface;
 readonly class Config
 {
     public function __construct(
-        public string $cacheDirPath = '',
+        public ?string $cacheDirPath = null,
         public ?CacheHandlerInterface $cacheExternalHandler = null,
     ) {
     }

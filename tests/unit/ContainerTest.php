@@ -35,9 +35,7 @@ class ContainerTest extends TestCase
         parent::setUp();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function has_with_true()
     {
         $this->serviceStorage->method('has')->willReturn(true);

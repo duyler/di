@@ -14,7 +14,7 @@ class ContainerBuilder
             $cacheHandler = $config->cacheExternalHandler;
         } else {
             $cacheHandler = new FileCacheHandler(
-                $config?->cacheDirPath ?: dirname('__DIR__'). '/../var/cache/container/'
+                $config?->cacheDirPath ?? dirname('__DIR__'). '/../var/cache/container/'
             );
         }
 
