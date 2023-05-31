@@ -1,4 +1,4 @@
-![build](https://github.com/konveyer-framework/dependency-injection/workflows/build/badge.svg)
+![build](https://github.com/duyler/dependency-injection/workflows/build/badge.svg)
 # The dependency injection container
 
 ### This package makes it possible to quickly connect the DI-container to your project.
@@ -35,9 +35,9 @@ class YourClass
 ```
 
 ```
-use Duyler\DependencyInjection\Provider\Provider
+use Duyler\DependencyInjection\Provider\AbstractProvider
 
-class ClassProvider extends Provider
+class ClassProvider extends AbstractProvider
 {
     public function bind(): array
     {
