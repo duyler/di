@@ -20,7 +20,7 @@ class ContainerBuilder
 
         $reflectionStorage = new ReflectionStorage();
         $serviceStorage = new ServiceStorage();
-        $dependencyMapper = new DependencyMapper($reflectionStorage);
+        $dependencyMapper = new DependencyMapper($reflectionStorage, $serviceStorage);
         return new Container(new Compiler($serviceStorage), $dependencyMapper, $serviceStorage, $cacheHandler);
     }
 }

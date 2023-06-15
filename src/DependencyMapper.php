@@ -18,7 +18,8 @@ class DependencyMapper
     private array $providers = [];
 
     public function __construct(
-        private readonly ReflectionStorage $reflectionStorage
+        private readonly ReflectionStorage $reflectionStorage,
+        private readonly ServiceStorage    $serviceStorage,
     ) {
     }
 
@@ -41,12 +42,13 @@ class DependencyMapper
     }
 
     /**
-     * @throws \ReflectionException
+     * @throws ReflectionException
      * @throws InterfaceMapNotFoundException
      * @throws CircularReferenceException
      */
     public function resolve(string $className): array
     {
+        $this->dependencies = [];
         $this->prepareDependencies($className);
         return $this->dependencies;
     }
@@ -68,7 +70,7 @@ class DependencyMapper
 
         $constructor = $this->reflectionStorage->get($className)->getConstructor();
 
-        if ($constructor !== null) {
+        if ($constructor !== null && $this->serviceStorage->has($className) === false) {
             $this->buildDependencies($constructor, $className);
         }
     }
