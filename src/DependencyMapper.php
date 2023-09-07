@@ -28,6 +28,11 @@ class DependencyMapper
         $this->classMap = $classMap + $this->classMap;
     }
 
+    public function getClassMap(): array
+    {
+        return $this->classMap;
+    }
+
     public function addProvider(string $id, ProviderInterface $provider): void
     {
         $this->providers[$id] = $provider;
