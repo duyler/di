@@ -71,6 +71,11 @@ class Container implements ContainerInterface
         $this->dependencyMapper->bind($classMap);
     }
 
+    public function getClassMap(): array
+    {
+        return $this->dependencyMapper->getClassMap();
+    }
+
     public function setProviders(array $providers): void
     {
         foreach ($providers as $bindClassName => $providerClassName) {
