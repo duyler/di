@@ -10,7 +10,7 @@ abstract class AbstractProvider implements ProviderInterface
     {
         return [];
     }
-    
+
     public function bind(): array
     {
         return [];

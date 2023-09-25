@@ -47,6 +47,6 @@ EOF;
 
     private function createFileName(string $id): string
     {
-        return $this->cacheDirPath . DIRECTORY_SEPARATOR . str_replace('\\','_', $id) . self::SUFFIX;
+        return $this->cacheDirPath . DIRECTORY_SEPARATOR . str_replace('\\', '_', $id) . self::SUFFIX;
     }
 }
