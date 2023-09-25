@@ -7,6 +7,7 @@ namespace Duyler\DependencyInjection;
 use Duyler\DependencyInjection\Exception\ResolveDependenciesTreeException;
 use Duyler\DependencyInjection\Provider\ProviderInterface;
 use Throwable;
+
 use function end;
 use function key;
 use function current;

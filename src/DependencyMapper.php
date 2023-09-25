@@ -100,7 +100,7 @@ class DependencyMapper
             if (class_exists($paramClassName) === false && interface_exists($paramClassName) === false) {
                 continue;
             }
-            
+
             $this->reflectionStorage->set($paramClassName, new ReflectionClass($paramClassName));
 
             $class = $this->reflectionStorage->get($paramClassName);
@@ -126,7 +126,7 @@ class DependencyMapper
      * @throws InterfaceMapNotFoundException
      * @throws CircularReferenceException
      */
-    protected function prepareInterface(ReflectionClass $interface, string $className, string $depArgName = ''):string
+    protected function prepareInterface(ReflectionClass $interface, string $className, string $depArgName = ''): string
     {
         $depInterfaceName = $interface->getName();
 

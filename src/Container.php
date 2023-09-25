@@ -9,6 +9,7 @@ use Duyler\DependencyInjection\Exception\InvalidArgumentException;
 use Duyler\DependencyInjection\Exception\NotFoundException;
 use Duyler\DependencyInjection\Exception\DefinitionIsNotObjectTypeException;
 use Duyler\DependencyInjection\Exception\ResolveDependenciesTreeException;
+
 use function is_object;
 use function interface_exists;
 

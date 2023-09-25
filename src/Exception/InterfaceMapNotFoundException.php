@@ -10,8 +10,7 @@ class InterfaceMapNotFoundException extends Exception implements ContainerExcept
     public function __construct(string $interfaceName)
     {
         $message = 'Interface map not found for ' . $interfaceName;
-    
+
         parent::__construct($message);
     }
-} 
- 
+}
