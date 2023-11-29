@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace Duyler\DependencyInjection;
 
 use Duyler\DependencyInjection\Cache\CacheHandlerInterface;
-use Duyler\DependencyInjection\Exception\InvalidArgumentException;
-use Duyler\DependencyInjection\Exception\NotFoundException;
 use Duyler\DependencyInjection\Exception\DefinitionIsNotObjectTypeException;
+use Duyler\DependencyInjection\Exception\InvalidArgumentException;
 use Duyler\DependencyInjection\Exception\ResolveDependenciesTreeException;
 
-use function is_object;
 use function interface_exists;
+use function is_object;
 
 class Container implements ContainerInterface
 {
@@ -20,15 +19,17 @@ class Container implements ContainerInterface
         protected readonly DependencyMapper $dependencyMapper,
         protected readonly ServiceStorage $serviceStorage,
         protected readonly CacheHandlerInterface $cacheHandler
-    ) {
-    }
+    ) {}
+
+    private function __clone() {}
 
     public function get(string $id): object
     {
-        if ($this->has($id) === false) {
-            throw new NotFoundException($id);
+        if ($this->has($id)) {
+            return $this->serviceStorage->get($id);
         }
-        return $this->serviceStorage->get($id);
+
+        return $this->make($id);
     }
 
     public function has(string $id): bool
@@ -36,7 +37,7 @@ class Container implements ContainerInterface
         return $this->serviceStorage->has($id);
     }
 
-    public function set($definition): void
+    public function set(object $definition): void
     {
         if (!is_object($definition)) {
             throw new DefinitionIsNotObjectTypeException(gettype($definition));
@@ -44,9 +45,10 @@ class Container implements ContainerInterface
 
         $className = $definition::class;
         if ($this->has($className)) {
-            throw new InvalidArgumentException(
-                sprintf('The "%s" service is already initialized, you cannot replace it.', $className)
-            );
+            throw new InvalidArgumentException(sprintf(
+                'The "%s" service is already initialized, you cannot replace it.',
+                $className,
+            ));
         }
 
         $this->serviceStorage->set($className, $definition);
@@ -61,7 +63,7 @@ class Container implements ContainerInterface
         }
 
         if (!empty($provider)) {
-            $this->setProviders([$className => $provider]);
+            $this->addProviders([$className => $provider]);
         }
 
         return $this->makeRequiredObject($className);
@@ -77,7 +79,7 @@ class Container implements ContainerInterface
         return $this->dependencyMapper->getClassMap();
     }
 
-    public function setProviders(array $providers): void
+    public function addProviders(array $providers): void
     {
         foreach ($providers as $bindClassName => $providerClassName) {
             $provider = $this->makeRequiredObject($providerClassName);
@@ -105,9 +107,5 @@ class Container implements ContainerInterface
         }
 
         return $this->get($className);
-    }
-
-    private function __clone()
-    {
     }
 }

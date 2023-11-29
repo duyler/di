@@ -6,11 +6,11 @@ namespace Duyler\DependencyInjection;
 
 use Duyler\DependencyInjection\Cache\CacheHandlerInterface;
 
-readonly class Config
+readonly class ContainerConfig
 {
     public function __construct(
-        public ?string $cacheDirPath = null,
+        public bool $enableCache = false,
+        public string $fileCacheDirPath = '',
         public ?CacheHandlerInterface $cacheExternalHandler = null,
-    ) {
-    }
+    ) {}
 }

@@ -7,5 +7,6 @@ namespace Duyler\DependencyInjection\Provider;
 interface ProviderInterface
 {
     public function getParams(): array;
+
     public function bind(): array;
 }

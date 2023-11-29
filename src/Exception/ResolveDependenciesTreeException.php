@@ -7,6 +7,4 @@ namespace Duyler\DependencyInjection\Exception;
 use Exception;
 use Psr\Container\ContainerExceptionInterface;
 
-class ResolveDependenciesTreeException extends Exception implements ContainerExceptionInterface
-{
-}
+class ResolveDependenciesTreeException extends Exception implements ContainerExceptionInterface {}

@@ -3,15 +3,20 @@
 declare(strict_types=1);
 
 use Duyler\DependencyInjection\Cache\CacheHandlerInterface;
+use Duyler\DependencyInjection\Compiler;
+use Duyler\DependencyInjection\Container;
+use Duyler\DependencyInjection\DependencyMapper;
+use Duyler\DependencyInjection\Exception\DefinitionIsNotObjectTypeException;
+use Duyler\DependencyInjection\Exception\NotFoundException;
+use Duyler\DependencyInjection\ServiceStorage;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Duyler\DependencyInjection\ServiceStorage;
-use Duyler\DependencyInjection\Container;
-use Duyler\DependencyInjection\Compiler;
-use Duyler\DependencyInjection\DependencyMapper;
-use Duyler\DependencyInjection\Exception\NotFoundException;
-use Duyler\DependencyInjection\Exception\DefinitionIsNotObjectTypeException;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 class ContainerTest extends TestCase
 {
     private Container $container;

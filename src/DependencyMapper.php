@@ -19,9 +19,8 @@ class DependencyMapper
 
     public function __construct(
         private readonly ReflectionStorage $reflectionStorage,
-        private readonly ServiceStorage    $serviceStorage,
-    ) {
-    }
+        private readonly ServiceStorage $serviceStorage,
+    ) {}
 
     public function bind(array $classMap): void
     {
@@ -43,6 +42,7 @@ class DependencyMapper
         if (isset($this->classMap[$interface])) {
             return $this->classMap[$interface];
         }
+
         throw new InterfaceMapNotFoundException($interface);
     }
 
@@ -55,6 +55,7 @@ class DependencyMapper
     {
         $this->dependencies = [];
         $this->prepareDependencies($className);
+
         return $this->dependencies;
     }
 
@@ -75,7 +76,7 @@ class DependencyMapper
 
         $constructor = $this->reflectionStorage->get($className)->getConstructor();
 
-        if ($constructor !== null && $this->serviceStorage->has($className) === false) {
+        if (null !== $constructor && false === $this->serviceStorage->has($className)) {
             $this->buildDependencies($constructor, $className);
         }
     }
@@ -88,16 +89,15 @@ class DependencyMapper
     protected function buildDependencies(ReflectionMethod $constructor, string $className): void
     {
         foreach ($constructor->getParameters() as $param) {
-
             $type = $param->getType();
 
-            if ($type === null) {
+            if (null === $type) {
                 continue;
             }
 
             $paramClassName = $type->getName();
 
-            if (class_exists($paramClassName) === false && interface_exists($paramClassName) === false) {
+            if (false === class_exists($paramClassName) && false === interface_exists($paramClassName)) {
                 continue;
             }
 
@@ -108,10 +108,9 @@ class DependencyMapper
             $paramArgClassName = $param->getName();
 
             if (null !== $class) {
-
                 if ($class->isInterface()) {
-
                     $this->prepareInterface($class, $className, $paramArgClassName);
+
                     continue;
                 }
 

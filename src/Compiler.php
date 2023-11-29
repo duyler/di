@@ -8,19 +8,19 @@ use Duyler\DependencyInjection\Exception\ResolveDependenciesTreeException;
 use Duyler\DependencyInjection\Provider\ProviderInterface;
 use Throwable;
 
+use function current;
 use function end;
 use function key;
-use function current;
 use function prev;
 
 class Compiler
 {
     protected ServiceStorage $serviceStorage;
-    protected array $definitions = [];
-    protected array $providers = [];
-    protected bool $singleton = true;
+    protected array $definitions      = [];
+    protected array $providers        = [];
+    protected bool $singleton         = true;
     protected array $dependenciesTree = [];
-    protected array $tmp = [];
+    protected array $tmp              = [];
 
     public function __construct(ServiceStorage $serviceStorage)
     {
@@ -43,10 +43,11 @@ class Compiler
     public function compile(string $className, array $dependenciesTree = []): void
     {
         $this->dependenciesTree = $dependenciesTree;
-        $this->tmp = [];
+        $this->tmp              = [];
 
         if (empty($this->dependenciesTree)) {
             $this->instanceClass($className);
+
             return;
         }
 
@@ -56,7 +57,7 @@ class Compiler
     public function setDefinition(string $className, $definition): void
     {
         if ($this->singleton) {
-            if ($this->serviceStorage->has($className) === false) {
+            if (false === $this->serviceStorage->has($className)) {
                 $this->serviceStorage->set($className, $definition);
             }
         } else {
@@ -89,15 +90,14 @@ class Compiler
     {
         $deps = end($this->dependenciesTree);
 
-        while ($deps !== false) {
-
+        while (false !== $deps) {
             $class = key($this->dependenciesTree);
 
             $deps = current($this->dependenciesTree);
 
             $this->instanceClass($class, $deps);
 
-            if (prev($this->dependenciesTree) === false) {
+            if (false === prev($this->dependenciesTree)) {
                 break;
             }
         }
@@ -111,7 +111,6 @@ class Compiler
         $dependencies = [];
 
         foreach ($deps as $argName => $dep) {
-
             if (isset($this->dependenciesTree[$dep])) {
                 $this->instanceClass($dep, $this->dependenciesTree[$dep]);
             } else {
@@ -132,10 +131,10 @@ class Compiler
 
         if (isset($this->providers[$className])) {
             $provider = $this->providers[$className];
-            $params = $provider->getParams();
+            $params   = $provider->getParams();
         }
 
-        if ($this->hasDefinition($className) === false) {
+        if (false === $this->hasDefinition($className)) {
             try {
                 $this->setDefinition($className, new $className(...$params + $dependencies));
             } catch (Throwable $exception) {

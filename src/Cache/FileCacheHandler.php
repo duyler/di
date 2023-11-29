@@ -6,8 +6,8 @@ namespace Duyler\DependencyInjection\Cache;
 
 class FileCacheHandler implements CacheHandlerInterface
 {
-    private const SUFFIX = '_Map_Cache.php';
-    private const PERMISSIONS = 0755;
+    private const SUFFIX      = '_Map_Cache.php';
+    private const PERMISSIONS = 0o755;
 
     public function __construct(private readonly string $cacheDirPath)
     {
@@ -30,13 +30,13 @@ class FileCacheHandler implements CacheHandlerInterface
             return;
         }
 
-        $tree = var_export($dependencyTree, true);
+        $tree        = var_export($dependencyTree, true);
         $fileContent = <<<EOF
-<?php
+            <?php
 
-return $tree;
+            return {$tree};
 
-EOF;
+            EOF;
         file_put_contents($this->createFileName($id), $fileContent);
     }
 
