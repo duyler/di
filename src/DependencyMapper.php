@@ -37,6 +37,9 @@ class DependencyMapper
         $this->providers[$id] = $provider;
     }
 
+    /**
+     * @throws InterfaceMapNotFoundException
+     */
     public function getBind(string $interface): string
     {
         if (isset($this->classMap[$interface])) {
@@ -107,23 +110,21 @@ class DependencyMapper
 
             $paramArgClassName = $param->getName();
 
-            if (null !== $class) {
-                if ($class->isInterface()) {
-                    $this->prepareInterface($class, $className, $paramArgClassName);
-
-                    continue;
-                }
-
-                $depClassName = $class->getName();
-
-                $this->resolveDependency($className, $depClassName, $paramArgClassName);
+            if ($class->isInterface()) {
+                $this->prepareInterface($class, $className, $paramArgClassName);
+                continue;
             }
+
+            $depClassName = $class->getName();
+
+            $this->resolveDependency($className, $depClassName, $paramArgClassName);
         }
     }
 
     /**
      * @throws InterfaceMapNotFoundException
      * @throws CircularReferenceException
+     * @throws ReflectionException
      */
     protected function prepareInterface(ReflectionClass $interface, string $className, string $depArgName = ''): string
     {

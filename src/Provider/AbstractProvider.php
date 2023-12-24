@@ -6,7 +6,7 @@ namespace Duyler\DependencyInjection\Provider;
 
 abstract class AbstractProvider implements ProviderInterface
 {
-    public function getParams(): array
+    public function getArguments(): array
     {
         return [];
     }
@@ -15,4 +15,6 @@ abstract class AbstractProvider implements ProviderInterface
     {
         return [];
     }
+
+    public function accept(object $definition): void {}
 }

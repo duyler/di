@@ -6,7 +6,9 @@ namespace Duyler\DependencyInjection\Provider;
 
 interface ProviderInterface
 {
-    public function getParams(): array;
+    public function getArguments(): array;
 
     public function bind(): array;
+
+    public function accept(object $definition): void;
 }
