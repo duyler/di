@@ -53,14 +53,14 @@ class Compiler
         $this->iterateDependenciesTree();
     }
 
-    public function setExternalDefinitions(string $className, $definition): void
+    public function setDefinitions(string $className, $definition): void
     {
         if (false === $this->serviceStorage->has($className)) {
             $this->serviceStorage->set($className, $definition);
         }
     }
 
-    public function getExternalDefinitions(string $className): object
+    public function getDefinitions(string $className): object
     {
         return $this->serviceStorage->get($className);
     }
@@ -105,7 +105,7 @@ class Compiler
             }
 
             if ($this->hasDefinition($dep)) {
-                $dependencies[$argName] = $this->getExternalDefinitions($dep);
+                $dependencies[$argName] = $this->getDefinitions($dep);
             }
         }
 
@@ -134,7 +134,7 @@ class Compiler
             try {
                 $definition = new $className(...$arguments + $dependencies);
                 $provider?->accept($definition);
-                $this->setExternalDefinitions($className, $definition);
+                $this->setDefinitions($className, $definition);
             } catch (Throwable $exception) {
                 throw new ResolveDependenciesTreeException($exception->getMessage());
             }
