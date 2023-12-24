@@ -4,31 +4,55 @@ declare(strict_types=1);
 
 namespace Duyler\DependencyInjection;
 
-use Duyler\DependencyInjection\Cache\CacheHandlerInterface;
+use Duyler\DependencyInjection\Exception\CircularReferenceException;
+use Duyler\DependencyInjection\Exception\InterfaceMapNotFoundException;
 use Duyler\DependencyInjection\Exception\InvalidArgumentException;
-use Duyler\DependencyInjection\Exception\NotFoundException;
-use Duyler\DependencyInjection\Exception\DefinitionIsNotObjectTypeException;
 use Duyler\DependencyInjection\Exception\ResolveDependenciesTreeException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use ReflectionException;
 
-use function is_object;
 use function interface_exists;
 
 class Container implements ContainerInterface
 {
+    protected readonly Compiler $compiler;
+    protected readonly DependencyMapper $dependencyMapper;
+    protected readonly ServiceStorage $serviceStorage;
+
     public function __construct(
-        protected readonly Compiler $compiler,
-        protected readonly DependencyMapper $dependencyMapper,
-        protected readonly ServiceStorage $serviceStorage,
-        protected readonly CacheHandlerInterface $cacheHandler
+        ContainerConfig $containerConfig = null,
     ) {
+        $this->serviceStorage = new ServiceStorage();
+        $this->compiler = new Compiler($this->serviceStorage);
+        $this->dependencyMapper = new DependencyMapper(
+            reflectionStorage: new ReflectionStorage(),
+            serviceStorage: $this->serviceStorage,
+        );
+
+        $this->addProviders($containerConfig?->getProviders() ?? []);
+        $this->bind($containerConfig?->getClassMap()  ?? []);
+
+        foreach ($containerConfig?->getDefinitions() ?? [] as $definition) {
+            $this->addDefinition($definition);
+        }
     }
 
+    /**
+     * @throws ResolveDependenciesTreeException
+     * @throws InterfaceMapNotFoundException
+     * @throws NotFoundExceptionInterface
+     * @throws CircularReferenceException
+     * @throws ReflectionException
+     * @throws ContainerExceptionInterface
+     */
     public function get(string $id): object
     {
-        if ($this->has($id) === false) {
-            throw new NotFoundException($id);
+        if ($this->has($id)) {
+            return $this->serviceStorage->get($id);
         }
-        return $this->serviceStorage->get($id);
+
+        return $this->make($id);
     }
 
     public function has(string $id): bool
@@ -36,32 +60,31 @@ class Container implements ContainerInterface
         return $this->serviceStorage->has($id);
     }
 
-    public function set($definition): void
+    public function set(object $definition): void
     {
-        if (!is_object($definition)) {
-            throw new DefinitionIsNotObjectTypeException(gettype($definition));
-        }
-
         $className = $definition::class;
         if ($this->has($className)) {
-            throw new InvalidArgumentException(
-                sprintf('The "%s" service is already initialized, you cannot replace it.', $className)
-            );
+            throw new InvalidArgumentException(sprintf(
+                'The "%s" service is already initialized, you cannot replace it.',
+                $className,
+            ));
         }
 
         $this->serviceStorage->set($className, $definition);
     }
 
-    public function make(string $className, string $provider = '', bool $singleton = true): mixed
+    /**
+     * @throws ResolveDependenciesTreeException
+     * @throws InterfaceMapNotFoundException
+     * @throws NotFoundExceptionInterface
+     * @throws CircularReferenceException
+     * @throws ReflectionException
+     * @throws ContainerExceptionInterface
+     */
+    private function make(string $className): mixed
     {
-        $this->compiler->singleton($singleton);
-
         if (interface_exists($className)) {
             $className = $this->dependencyMapper->getBind($className);
-        }
-
-        if (!empty($provider)) {
-            $this->setProviders([$className => $provider]);
         }
 
         return $this->makeRequiredObject($className);
@@ -77,7 +100,15 @@ class Container implements ContainerInterface
         return $this->dependencyMapper->getClassMap();
     }
 
-    public function setProviders(array $providers): void
+    /**
+     * @throws ResolveDependenciesTreeException
+     * @throws NotFoundExceptionInterface
+     * @throws InterfaceMapNotFoundException
+     * @throws CircularReferenceException
+     * @throws ReflectionException
+     * @throws ContainerExceptionInterface
+     */
+    public function addProviders(array $providers): void
     {
         foreach ($providers as $bindClassName => $providerClassName) {
             $provider = $this->makeRequiredObject($providerClassName);
@@ -86,28 +117,24 @@ class Container implements ContainerInterface
         }
     }
 
-    protected function makeRequiredObject(string $className): mixed
+    public function addDefinition(Definition $definition): void
     {
-        if ($this->cacheHandler->isExists($className)) {
-            $dependenciesTree = $this->cacheHandler->get($className);
-        } else {
-            $dependenciesTree = $this->dependencyMapper->resolve($className);
-            $this->cacheHandler->record($className, $dependenciesTree);
-        }
-
-        try {
-            $this->compiler->compile($className, $dependenciesTree);
-        } catch (ResolveDependenciesTreeException $exception) {
-            $this->cacheHandler->invalidate($className);
-            $dependenciesTree = $this->dependencyMapper->resolve($className);
-            $this->cacheHandler->record($className, $dependenciesTree);
-            $this->compiler->compile($className, $dependenciesTree);
-        }
-
-        return $this->get($className);
+        $this->compiler->addDefinition($definition);
     }
 
-    private function __clone()
+    /**
+     * @throws ResolveDependenciesTreeException
+     * @throws NotFoundExceptionInterface
+     * @throws InterfaceMapNotFoundException
+     * @throws CircularReferenceException
+     * @throws ContainerExceptionInterface
+     * @throws ReflectionException
+     */
+    protected function makeRequiredObject(string $className): mixed
     {
+        $dependenciesTree = $this->dependencyMapper->resolve($className);
+        $this->compiler->compile($className, $dependenciesTree);
+
+        return $this->get($className);
     }
 }

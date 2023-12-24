@@ -8,9 +8,9 @@ use Duyler\DependencyInjection\Exception\ResolveDependenciesTreeException;
 use Duyler\DependencyInjection\Provider\ProviderInterface;
 use Throwable;
 
+use function current;
 use function end;
 use function key;
-use function current;
 use function prev;
 
 class Compiler
@@ -18,23 +18,24 @@ class Compiler
     protected ServiceStorage $serviceStorage;
     protected array $definitions = [];
     protected array $providers = [];
-    protected bool $singleton = true;
+
+    /** @var Definition[]  */
+    protected array $externalDefinitions = [];
     protected array $dependenciesTree = [];
-    protected array $tmp = [];
 
     public function __construct(ServiceStorage $serviceStorage)
     {
         $this->serviceStorage = $serviceStorage;
     }
 
-    public function singleton(bool $flag): void
-    {
-        $this->singleton = $flag;
-    }
-
     public function addProvider(string $id, ProviderInterface $provider): void
     {
         $this->providers[$id] = $provider;
+    }
+
+    public function addDefinition(Definition $definition): void
+    {
+        $this->externalDefinitions[$definition->id] = $definition;
     }
 
     /**
@@ -43,7 +44,6 @@ class Compiler
     public function compile(string $className, array $dependenciesTree = []): void
     {
         $this->dependenciesTree = $dependenciesTree;
-        $this->tmp = [];
 
         if (empty($this->dependenciesTree)) {
             $this->instanceClass($className);
@@ -53,33 +53,21 @@ class Compiler
         $this->iterateDependenciesTree();
     }
 
-    public function setDefinition(string $className, $definition): void
+    public function setExternalDefinitions(string $className, $definition): void
     {
-        if ($this->singleton) {
-            if ($this->serviceStorage->has($className) === false) {
-                $this->serviceStorage->set($className, $definition);
-            }
-        } else {
-            $this->tmp[$className] = $definition;
+        if (false === $this->serviceStorage->has($className)) {
+            $this->serviceStorage->set($className, $definition);
         }
     }
 
-    public function getDefinition(string $className): object
+    public function getExternalDefinitions(string $className): object
     {
-        if ($this->singleton && $this->hasDefinition($className)) {
-            return $this->serviceStorage->get($className);
-        }
-
-        return $this->tmp[$className];
+        return $this->serviceStorage->get($className);
     }
 
     public function hasDefinition(string $className): bool
     {
-        if ($this->singleton) {
-            return $this->serviceStorage->has($className);
-        }
-
-        return isset($this->tmp[$className]);
+        return $this->serviceStorage->has($className);
     }
 
     /**
@@ -89,15 +77,14 @@ class Compiler
     {
         $deps = end($this->dependenciesTree);
 
-        while ($deps !== false) {
-
+        while (false !== $deps) {
             $class = key($this->dependenciesTree);
 
             $deps = current($this->dependenciesTree);
 
             $this->instanceClass($class, $deps);
 
-            if (prev($this->dependenciesTree) === false) {
+            if (false === prev($this->dependenciesTree)) {
                 break;
             }
         }
@@ -111,7 +98,6 @@ class Compiler
         $dependencies = [];
 
         foreach ($deps as $argName => $dep) {
-
             if (isset($this->dependenciesTree[$dep])) {
                 $this->instanceClass($dep, $this->dependenciesTree[$dep]);
             } else {
@@ -119,25 +105,36 @@ class Compiler
             }
 
             if ($this->hasDefinition($dep)) {
-                $dependencies[$argName] = $this->getDefinition($dep);
+                $dependencies[$argName] = $this->getExternalDefinitions($dep);
             }
         }
 
         $this->prepareDependencies($className, $dependencies);
     }
 
+    /**
+     * @throws ResolveDependenciesTreeException
+     */
     protected function prepareDependencies(string $className, array $dependencies = []): void
     {
-        $params = [];
+        $arguments = [];
+        $provider = null;
 
         if (isset($this->providers[$className])) {
+            /** @var ProviderInterface $provider */
             $provider = $this->providers[$className];
-            $params = $provider->getParams();
+            $arguments   = $provider->getArguments();
         }
 
-        if ($this->hasDefinition($className) === false) {
+        if (isset($this->externalDefinitions[$className])) {
+            $arguments = $this->externalDefinitions[$className]->arguments + $arguments;
+        }
+
+        if (false === $this->hasDefinition($className)) {
             try {
-                $this->setDefinition($className, new $className(...$params + $dependencies));
+                $definition = new $className(...$arguments + $dependencies);
+                $provider?->accept($definition);
+                $this->setExternalDefinitions($className, $definition);
             } catch (Throwable $exception) {
                 throw new ResolveDependenciesTreeException($exception->getMessage());
             }

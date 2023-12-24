@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Duyler\DependencyInjection;
 
-use InvalidArgumentException;
-
 class ServiceStorage
 {
     private array $services = [];
