@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Duyler\DependencyInjection\Container;
-use Duyler\DependencyInjection\Exception\NotFoundException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
