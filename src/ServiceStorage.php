@@ -22,4 +22,9 @@ class ServiceStorage
     {
         return isset($this->services[$className]);
     }
+
+    public function remove(string $className): void
+    {
+        unset($this->services[$className]);
+    }
 }

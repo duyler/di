@@ -6,8 +6,8 @@ namespace Duyler\DependencyInjection;
 
 use Duyler\DependencyInjection\Exception\CircularReferenceException;
 use Duyler\DependencyInjection\Exception\InterfaceMapNotFoundException;
-use Duyler\DependencyInjection\Exception\InvalidArgumentException;
 use Duyler\DependencyInjection\Exception\ResolveDependenciesTreeException;
+use Override;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use ReflectionException;
@@ -19,6 +19,7 @@ class Container implements ContainerInterface
     protected readonly Compiler $compiler;
     protected readonly DependencyMapper $dependencyMapper;
     protected readonly ServiceStorage $serviceStorage;
+    private array $dependenciesTree = [];
 
     public function __construct(
         ContainerConfig $containerConfig = null,
@@ -46,6 +47,7 @@ class Container implements ContainerInterface
      * @throws ReflectionException
      * @throws ContainerExceptionInterface
      */
+    #[Override]
     public function get(string $id): object
     {
         if ($this->has($id)) {
@@ -55,22 +57,16 @@ class Container implements ContainerInterface
         return $this->make($id);
     }
 
+    #[Override]
     public function has(string $id): bool
     {
         return $this->serviceStorage->has($id);
     }
 
+    #[Override]
     public function set(object $definition): void
     {
-        $className = $definition::class;
-        if ($this->has($className)) {
-            throw new InvalidArgumentException(sprintf(
-                'The "%s" service is already initialized, you cannot replace it.',
-                $className,
-            ));
-        }
-
-        $this->serviceStorage->set($className, $definition);
+        $this->serviceStorage->set($definition::class, $definition);
     }
 
     /**
@@ -90,11 +86,13 @@ class Container implements ContainerInterface
         return $this->makeRequiredObject($className);
     }
 
+    #[Override]
     public function bind(array $classMap): void
     {
         $this->dependencyMapper->bind($classMap);
     }
 
+    #[Override]
     public function getClassMap(): array
     {
         return $this->dependencyMapper->getClassMap();
@@ -108,6 +106,7 @@ class Container implements ContainerInterface
      * @throws ReflectionException
      * @throws ContainerExceptionInterface
      */
+    #[Override]
     public function addProviders(array $providers): void
     {
         foreach ($providers as $bindClassName => $providerClassName) {
@@ -117,6 +116,7 @@ class Container implements ContainerInterface
         }
     }
 
+    #[Override]
     public function addDefinition(Definition $definition): void
     {
         $this->compiler->addDefinition($definition);
@@ -132,9 +132,20 @@ class Container implements ContainerInterface
      */
     protected function makeRequiredObject(string $className): mixed
     {
-        $dependenciesTree = $this->dependencyMapper->resolve($className);
-        $this->compiler->compile($className, $dependenciesTree);
+        if (!isset($this->dependenciesTree[$className])) {
+            $this->dependenciesTree[$className] = $this->dependencyMapper->resolve($className);
+        }
+
+        $this->compiler->compile($className, $this->dependenciesTree[$className]);
 
         return $this->get($className);
+    }
+
+    #[Override]
+    public function reset(string $id): void
+    {
+        if ($this->has($id)) {
+            $this->serviceStorage->remove($id);
+        }
     }
 }
