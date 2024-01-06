@@ -142,10 +142,8 @@ class Container implements ContainerInterface
     }
 
     #[Override]
-    public function reset(string $id): void
+    public function softCleanUp(): void
     {
-        if ($this->has($id)) {
-            $this->serviceStorage->remove($id);
-        }
+        $this->serviceStorage->cleanUp();
     }
 }
