@@ -13,5 +13,5 @@ interface ContainerInterface extends PsrContainerInterface
     public function getClassMap(): array;
     public function set(object $definition): void;
     public function addDefinition(Definition $definition): void;
-    public function reset(string $id): void;
+    public function softCleanUp(): void;
 }

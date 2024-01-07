@@ -130,7 +130,14 @@ class DependencyMapper
     {
         $depInterfaceName = $interface->getName();
 
-        $this->classMap[$depInterfaceName] ??= $this->providers[$className]?->bind()[$depInterfaceName];
+        /** @var ProviderInterface|null $provider */
+        $provider = $this->providers[$className] ?? null;
+
+        $this->classMap[$depInterfaceName] ??= $provider?->bind()[$depInterfaceName] ?? null;
+
+        if (array_key_exists($depArgName, $provider?->getArguments() ?? [])) {
+            return '@' . $depArgName . '_be provided_in_' . $provider::class;
+        }
 
         if (!isset($this->classMap[$depInterfaceName])) {
             throw new InterfaceMapNotFoundException($depInterfaceName);
