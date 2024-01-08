@@ -9,12 +9,12 @@ The container can be used both in automatic mode, using type hints in class cons
 **Example automatically make instance**
 
 ```
-use Duyler\DependencyInjection\ContainerBuilder;
+use Duyler\DependencyInjection\Container;
 use YourClass;
 
-$container = ContainerBuilder::build();
+$container = new Container;
 
-$yourClassObject = $container->make(YouClass::class);
+$yourClassObject = $container->get(YouClass::class);
 
 ```
 
@@ -51,16 +51,22 @@ class ClassProvider extends AbstractProvider
 
 ```
 
-$yourClassObject = $container->make(YouClass::class, ClassProvider::class);
-
-```
-or
-
-```
-
-$container->setProviders([
+$container->addProviders([
     YouClass::class => ClassProvider::class,
 ]);
 
-$yourClassObject = $container->make(YouClass::class);
+$yourClassObject = $container->get(YouClass::class);
 
+```
+
+**Make instance with bind**
+
+```
+
+$container->bind([
+    MyClassInterface::class => MyImplemensClass::class,
+]);
+
+$yourClassObject = $container->get(YouClass::class);
+
+```

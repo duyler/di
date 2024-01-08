@@ -8,10 +8,10 @@ use Psr\Container\ContainerInterface as PsrContainerInterface;
 
 interface ContainerInterface extends PsrContainerInterface
 {
-    public function bind(array $classMap): void;
-    public function addProviders(array $providers): void;
+    public function bind(array $classMap): self;
+    public function addProviders(array $providers): self;
     public function getClassMap(): array;
-    public function set(object $definition): void;
-    public function addDefinition(Definition $definition): void;
-    public function softCleanUp(): void;
+    public function set(object $definition): self;
+    public function addDefinition(Definition $definition): self;
+    public function softCleanUp(): self;
 }

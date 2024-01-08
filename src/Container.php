@@ -64,9 +64,10 @@ class Container implements ContainerInterface
     }
 
     #[Override]
-    public function set(object $definition): void
+    public function set(object $definition): self
     {
         $this->serviceStorage->set($definition::class, $definition);
+        return $this;
     }
 
     /**
@@ -87,9 +88,10 @@ class Container implements ContainerInterface
     }
 
     #[Override]
-    public function bind(array $classMap): void
+    public function bind(array $classMap): self
     {
         $this->dependencyMapper->bind($classMap);
+        return $this;
     }
 
     #[Override]
@@ -107,19 +109,22 @@ class Container implements ContainerInterface
      * @throws ContainerExceptionInterface
      */
     #[Override]
-    public function addProviders(array $providers): void
+    public function addProviders(array $providers): self
     {
         foreach ($providers as $bindClassName => $providerClassName) {
             $provider = $this->makeRequiredObject($providerClassName);
             $this->compiler->addProvider($bindClassName, $provider);
             $this->dependencyMapper->addProvider($bindClassName, $provider);
         }
+
+        return $this;
     }
 
     #[Override]
-    public function addDefinition(Definition $definition): void
+    public function addDefinition(Definition $definition): self
     {
         $this->compiler->addDefinition($definition);
+        return $this;
     }
 
     /**
@@ -142,8 +147,9 @@ class Container implements ContainerInterface
     }
 
     #[Override]
-    public function softCleanUp(): void
+    public function softCleanUp(): self
     {
         $this->serviceStorage->cleanUp();
+        return $this;
     }
 }
