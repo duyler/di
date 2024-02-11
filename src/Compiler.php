@@ -136,7 +136,7 @@ class Compiler
                 $provider?->accept($definition);
                 $this->setDefinitions($className, $definition);
             } catch (Throwable $exception) {
-                throw new ResolveDependenciesTreeException($exception->getMessage());
+                throw new ResolveDependenciesTreeException($exception->getMessage() . ' in ' . $className);
             }
         }
     }
