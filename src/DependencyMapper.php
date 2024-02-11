@@ -140,7 +140,7 @@ class DependencyMapper
         }
 
         if (!isset($this->classMap[$depInterfaceName])) {
-            throw new InterfaceMapNotFoundException($depInterfaceName);
+            throw new InterfaceMapNotFoundException($depInterfaceName, $className);
         }
 
         $depClassName = $this->classMap[$depInterfaceName];
