@@ -23,7 +23,7 @@ class ServiceStorage
         return isset($this->services[$className]);
     }
 
-    public function cleanUp(): void
+    public function reset(): void
     {
         $this->services = [];
     }
