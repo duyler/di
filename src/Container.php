@@ -147,9 +147,9 @@ class Container implements ContainerInterface
     }
 
     #[Override]
-    public function softCleanUp(): self
+    public function softReset(): self
     {
-        $this->serviceStorage->cleanUp();
+        $this->serviceStorage->reset();
         return $this;
     }
 }
