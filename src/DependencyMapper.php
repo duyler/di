@@ -100,7 +100,10 @@ class DependencyMapper
 
             $paramClassName = $type->getName();
 
-            if (false === class_exists($paramClassName) && false === interface_exists($paramClassName)) {
+            if (false === class_exists($paramClassName)
+                && false === interface_exists($paramClassName)
+                || enum_exists($paramClassName)
+            ) {
                 continue;
             }
 
