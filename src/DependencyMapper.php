@@ -15,11 +15,11 @@ class DependencyMapper
 {
     private array $classMap = [];
     private array $dependencies = [];
-    private array $providers = [];
 
     public function __construct(
         private readonly ReflectionStorage $reflectionStorage,
         private readonly ServiceStorage $serviceStorage,
+        private readonly ProviderStorage $providerStorage,
     ) {}
 
     public function bind(array $classMap): void
@@ -32,21 +32,21 @@ class DependencyMapper
         return $this->classMap;
     }
 
-    public function addProvider(string $id, ProviderInterface $provider): void
-    {
-        $this->providers[$id] = $provider;
-    }
-
-    /**
-     * @throws InterfaceMapNotFoundException
-     */
     public function getBind(string $interface): string
     {
+        if ($this->providerStorage->has($interface)) {
+            $provider = $this->providerStorage->get($interface);
+            $this->classMap = $provider->bind() + $this->classMap;
+            if (isset($this->classMap[$interface])) {
+                $this->providerStorage->add($this->classMap[$interface], $provider);
+            }
+        }
+
         if (isset($this->classMap[$interface])) {
             return $this->classMap[$interface];
         }
 
-        throw new InterfaceMapNotFoundException($interface);
+        return $interface;
     }
 
     /**
@@ -134,7 +134,7 @@ class DependencyMapper
         $depInterfaceName = $interface->getName();
 
         /** @var ProviderInterface|null $provider */
-        $provider = $this->providers[$className] ?? null;
+        $provider = $this->providerStorage->get($className);
 
         $this->classMap[$depInterfaceName] ??= $provider?->bind()[$depInterfaceName] ?? null;
 
