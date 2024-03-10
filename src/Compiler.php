@@ -15,23 +15,16 @@ use function prev;
 
 class Compiler
 {
-    protected ServiceStorage $serviceStorage;
     protected array $definitions = [];
-    protected array $providers = [];
 
-    /** @var Definition[]  */
+    /** @var Definition[] */
     protected array $externalDefinitions = [];
     protected array $dependenciesTree = [];
 
-    public function __construct(ServiceStorage $serviceStorage)
-    {
-        $this->serviceStorage = $serviceStorage;
-    }
-
-    public function addProvider(string $id, ProviderInterface $provider): void
-    {
-        $this->providers[$id] = $provider;
-    }
+    public function __construct(
+        private readonly ServiceStorage $serviceStorage,
+        private readonly ProviderStorage $providerStorage,
+    ) {}
 
     public function addDefinition(Definition $definition): void
     {
@@ -47,6 +40,7 @@ class Compiler
 
         if (empty($this->dependenciesTree)) {
             $this->instanceClass($className);
+
             return;
         }
 
@@ -120,9 +114,9 @@ class Compiler
         $arguments = [];
         $provider = null;
 
-        if (isset($this->providers[$className])) {
+        if ($this->providerStorage->has($className)) {
             /** @var ProviderInterface $provider */
-            $provider = $this->providers[$className];
+            $provider = $this->providerStorage->get($className);
             $arguments   = $provider->getArguments();
         }
 

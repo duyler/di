@@ -19,16 +19,19 @@ class Container implements ContainerInterface
     protected readonly Compiler $compiler;
     protected readonly DependencyMapper $dependencyMapper;
     protected readonly ServiceStorage $serviceStorage;
+    protected readonly ProviderStorage $providerStorage;
     private array $dependenciesTree = [];
 
     public function __construct(
-        ContainerConfig $containerConfig = null,
+        ?ContainerConfig $containerConfig = null,
     ) {
         $this->serviceStorage = new ServiceStorage();
-        $this->compiler = new Compiler($this->serviceStorage);
+        $this->providerStorage = new ProviderStorage();
+        $this->compiler = new Compiler($this->serviceStorage, $this->providerStorage);
         $this->dependencyMapper = new DependencyMapper(
             reflectionStorage: new ReflectionStorage(),
             serviceStorage: $this->serviceStorage,
+            providerStorage: $this->providerStorage,
         );
 
         $this->addProviders($containerConfig?->getProviders() ?? []);
@@ -67,6 +70,7 @@ class Container implements ContainerInterface
     public function set(object $definition): self
     {
         $this->serviceStorage->set($definition::class, $definition);
+
         return $this;
     }
 
@@ -91,6 +95,7 @@ class Container implements ContainerInterface
     public function bind(array $classMap): self
     {
         $this->dependencyMapper->bind($classMap);
+
         return $this;
     }
 
@@ -100,21 +105,12 @@ class Container implements ContainerInterface
         return $this->dependencyMapper->getClassMap();
     }
 
-    /**
-     * @throws ResolveDependenciesTreeException
-     * @throws NotFoundExceptionInterface
-     * @throws InterfaceMapNotFoundException
-     * @throws CircularReferenceException
-     * @throws ReflectionException
-     * @throws ContainerExceptionInterface
-     */
     #[Override]
     public function addProviders(array $providers): self
     {
         foreach ($providers as $bindClassName => $providerClassName) {
             $provider = $this->makeRequiredObject($providerClassName);
-            $this->compiler->addProvider($bindClassName, $provider);
-            $this->dependencyMapper->addProvider($bindClassName, $provider);
+            $this->providerStorage->add($bindClassName, $provider);
         }
 
         return $this;
@@ -124,6 +120,7 @@ class Container implements ContainerInterface
     public function addDefinition(Definition $definition): self
     {
         $this->compiler->addDefinition($definition);
+
         return $this;
     }
 
@@ -150,6 +147,7 @@ class Container implements ContainerInterface
     public function softReset(): self
     {
         $this->serviceStorage->reset();
+
         return $this;
     }
 }
