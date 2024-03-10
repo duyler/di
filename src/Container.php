@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Duyler\DependencyInjection;
 
+use Duyler\DependencyInjection\Attribute\Reset;
 use Duyler\DependencyInjection\Exception\CircularReferenceException;
 use Duyler\DependencyInjection\Exception\InterfaceMapNotFoundException;
+use Duyler\DependencyInjection\Exception\ResetNotImplementException;
 use Duyler\DependencyInjection\Exception\ResolveDependenciesTreeException;
 use Override;
 use Psr\Container\ContainerExceptionInterface;
@@ -20,6 +22,7 @@ class Container implements ContainerInterface
     protected readonly DependencyMapper $dependencyMapper;
     protected readonly ServiceStorage $serviceStorage;
     protected readonly ProviderStorage $providerStorage;
+    protected readonly ReflectionStorage $reflectionStorage;
     private array $dependenciesTree = [];
 
     public function __construct(
@@ -27,9 +30,10 @@ class Container implements ContainerInterface
     ) {
         $this->serviceStorage = new ServiceStorage();
         $this->providerStorage = new ProviderStorage();
+        $this->reflectionStorage = new ReflectionStorage();
         $this->compiler = new Compiler($this->serviceStorage, $this->providerStorage);
         $this->dependencyMapper = new DependencyMapper(
-            reflectionStorage: new ReflectionStorage(),
+            reflectionStorage: $this->reflectionStorage,
             serviceStorage: $this->serviceStorage,
             providerStorage: $this->providerStorage,
         );
@@ -79,8 +83,8 @@ class Container implements ContainerInterface
      * @throws InterfaceMapNotFoundException
      * @throws NotFoundExceptionInterface
      * @throws CircularReferenceException
-     * @throws ReflectionException
      * @throws ContainerExceptionInterface
+     * @throws ReflectionException
      */
     private function make(string $className): mixed
     {
@@ -147,6 +151,28 @@ class Container implements ContainerInterface
     public function softReset(): self
     {
         $this->serviceStorage->reset();
+
+        return $this;
+    }
+
+    #[Override]
+    public function selectiveReset(): self
+    {
+        $reflections = $this->reflectionStorage->getAll();
+
+        foreach ($reflections as $className => $reflection) {
+            $attributes = $reflection->getAttributes();
+            foreach ($attributes as $attribute) {
+                if ($attribute->getName() === Reset::class) {
+                    $service = $this->serviceStorage->get($className);
+                    if (false === method_exists($service, 'reset')) {
+                        throw new ResetNotImplementException($className);
+                    }
+
+                    $service->reset();
+                }
+            }
+        }
 
         return $this;
     }
