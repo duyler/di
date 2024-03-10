@@ -30,6 +30,17 @@ class ProviderTest extends TestCase
         $this->assertInstanceOf(MyClass::class, $definition);
         $this->assertSame('test', $definition->getValue());
     }
+
+    #[Test]
+    public function get_with_dependency_with_provider_call_accept(): void
+    {
+        $container = new Container();
+        $container->addProviders([MyClassInterface::class => ProviderWithAccept::class]);
+        $definition = $container->get(MyClassWithDependency::class);
+        $this->assertInstanceOf(MyClassWithDependency::class, $definition);
+        $this->assertInstanceOf(MyClassInterface::class, $definition->getDependency());
+        $this->assertInstanceOf(MyClass::class, $definition->getDependency());
+    }
 }
 
 class ProviderWithAccept extends AbstractProvider
@@ -62,5 +73,17 @@ class MyClass implements MyClassInterface
     public function setValue(string $value): void
     {
         $this->value = $value;
+    }
+}
+
+class MyClassWithDependency
+{
+    public function __construct(
+        private MyClassInterface $dependency,
+    ) {}
+
+    public function getDependency(): MyClassInterface
+    {
+        return $this->dependency;
     }
 }

@@ -134,7 +134,7 @@ class DependencyMapper
         $depInterfaceName = $interface->getName();
 
         /** @var ProviderInterface|null $provider */
-        $provider = $this->providerStorage->get($className);
+        $provider = $this->providerStorage->get($className) ?? $this->providerStorage->get($depInterfaceName);
 
         $this->classMap[$depInterfaceName] ??= $provider?->bind()[$depInterfaceName] ?? null;
 
