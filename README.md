@@ -8,7 +8,7 @@ The container can be used both in automatic mode, using type hints in class cons
 
 **Example automatically make instance**
 
-```
+```php
 use Duyler\DependencyInjection\Container;
 use YourClass;
 
@@ -20,7 +20,7 @@ $yourClassObject = $container->get(YouClass::class);
 
 **Make instance with provider**
 
-```
+```php
 
 class YourClass
 {
@@ -34,7 +34,7 @@ class YourClass
 
 ```
 
-```
+```php
 use Duyler\DependencyInjection\Provider\AbstractProvider
 
 class ClassProvider extends AbstractProvider
@@ -49,19 +49,19 @@ class ClassProvider extends AbstractProvider
 
 ```
 
-```
+```php
 
 $container->addProviders([
-    YouClass::class => ClassProvider::class,
+    MyClassInterface::class => ClassProvider::class,
 ]);
 
-$yourClassObject = $container->get(YouClass::class);
+$yourClassObject = $container->get(YourClass::class);
 
 ```
 
 **Make instance with bind**
 
-```
+```php
 
 $container->bind([
     MyClassInterface::class => MyImplemensClass::class,
