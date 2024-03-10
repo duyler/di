@@ -17,7 +17,7 @@ class Compiler
 {
     protected array $definitions = [];
 
-    /** @var Definition[]  */
+    /** @var Definition[] */
     protected array $externalDefinitions = [];
     protected array $dependenciesTree = [];
 
@@ -40,6 +40,7 @@ class Compiler
 
         if (empty($this->dependenciesTree)) {
             $this->instanceClass($className);
+
             return;
         }
 

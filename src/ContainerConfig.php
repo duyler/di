@@ -19,6 +19,7 @@ class ContainerConfig
     public function withBind(array $bind): ContainerConfig
     {
         $this->classMap = $bind + $this->classMap;
+
         return $this;
     }
 
@@ -26,12 +27,14 @@ class ContainerConfig
     public function withProvider(array $provider): ContainerConfig
     {
         $this->providers = $provider + $this->providers;
+
         return $this;
     }
 
     public function withDefinition(Definition $definition): ContainerConfig
     {
         $this->definitions[] = $definition;
+
         return $this;
     }
 

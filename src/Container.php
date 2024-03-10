@@ -23,7 +23,7 @@ class Container implements ContainerInterface
     private array $dependenciesTree = [];
 
     public function __construct(
-        ContainerConfig $containerConfig = null,
+        ?ContainerConfig $containerConfig = null,
     ) {
         $this->serviceStorage = new ServiceStorage();
         $this->providerStorage = new ProviderStorage();
@@ -70,6 +70,7 @@ class Container implements ContainerInterface
     public function set(object $definition): self
     {
         $this->serviceStorage->set($definition::class, $definition);
+
         return $this;
     }
 
@@ -94,6 +95,7 @@ class Container implements ContainerInterface
     public function bind(array $classMap): self
     {
         $this->dependencyMapper->bind($classMap);
+
         return $this;
     }
 
@@ -118,6 +120,7 @@ class Container implements ContainerInterface
     public function addDefinition(Definition $definition): self
     {
         $this->compiler->addDefinition($definition);
+
         return $this;
     }
 
@@ -144,6 +147,7 @@ class Container implements ContainerInterface
     public function softReset(): self
     {
         $this->serviceStorage->reset();
+
         return $this;
     }
 }

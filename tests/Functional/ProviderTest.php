@@ -52,14 +52,12 @@ class ProviderWithAccept extends AbstractProvider
 
     public function accept(object $definition): void
     {
-        /** @var MyClass $definition */
+        /* @var MyClass $definition */
         $definition->setValue('test');
     }
 }
 
-interface MyClassInterface
-{
-}
+interface MyClassInterface {}
 
 class MyClass implements MyClassInterface
 {
