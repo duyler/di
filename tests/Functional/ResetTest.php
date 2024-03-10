@@ -13,7 +13,7 @@ use PHPUnit\Framework\TestCase;
 class ResetTest extends TestCase
 {
     #[Test]
-    public function with__implement_reset(): void
+    public function with_implement_reset(): void
     {
         $container = new Container();
         $obj = $container->get(WithReset::class);
@@ -26,7 +26,7 @@ class ResetTest extends TestCase
     }
 
     #[Test]
-    public function without__implement_reset(): void
+    public function without_implement_reset(): void
     {
         $container = new Container();
         $container->get(WithoutReset::class);
