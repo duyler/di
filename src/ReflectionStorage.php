@@ -27,4 +27,9 @@ class ReflectionStorage
     {
         return isset($this->reflections[$reflectionClassName]);
     }
+
+    public function getAll(): array
+    {
+        return $this->reflections;
+    }
 }
