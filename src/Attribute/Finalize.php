@@ -7,4 +7,7 @@ namespace Duyler\DependencyInjection\Attribute;
 use Attribute;
 
 #[Attribute]
-class Reset {}
+class Finalize
+{
+    public function __construct(public string $method = 'finalize') {}
+}
