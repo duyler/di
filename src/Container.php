@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Duyler\DependencyInjection;
 
-use Duyler\DependencyInjection\Attribute\Reset;
+use Duyler\DependencyInjection\Attribute\Finalize;
 use Duyler\DependencyInjection\Exception\CircularReferenceException;
 use Duyler\DependencyInjection\Exception\InterfaceMapNotFoundException;
-use Duyler\DependencyInjection\Exception\ResetNotImplementException;
+use Duyler\DependencyInjection\Exception\FinalizeNotImplementException;
 use Duyler\DependencyInjection\Exception\ResolveDependenciesTreeException;
 use Override;
 use Psr\Container\ContainerExceptionInterface;
@@ -162,14 +162,16 @@ class Container implements ContainerInterface
 
         foreach ($reflections as $className => $reflection) {
             $attributes = $reflection->getAttributes();
-            foreach ($attributes as $attribute) {
-                if ($attribute->getName() === Reset::class) {
+            foreach ($attributes as $attributeReflection) {
+                if ($attributeReflection->getName() === Finalize::class) {
                     $service = $this->serviceStorage->get($className);
-                    if (false === method_exists($service, 'reset')) {
-                        throw new ResetNotImplementException($className);
+                    /** @var Finalize $attribute */
+                    $attribute = $attributeReflection->newInstance();
+                    if (false === method_exists($service, $attribute->method)) {
+                        throw new FinalizeNotImplementException($className, $attribute->method);
                     }
 
-                    $service->reset();
+                    $service->{$attribute->method}();
                 }
             }
         }

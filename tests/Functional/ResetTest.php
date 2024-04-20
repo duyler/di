@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Duyler\DependencyInjection\Test\Functional;
 
-use Duyler\DependencyInjection\Attribute\Reset;
+use Duyler\DependencyInjection\Attribute\Finalize;
 use Duyler\DependencyInjection\Container;
-use Duyler\DependencyInjection\Exception\ResetNotImplementException;
+use Duyler\DependencyInjection\Exception\FinalizeNotImplementException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -31,17 +31,17 @@ class ResetTest extends TestCase
         $container = new Container();
         $container->get(WithoutReset::class);
 
-        $this->expectException(ResetNotImplementException::class);
+        $this->expectException(FinalizeNotImplementException::class);
         $container->selectiveReset();
     }
 }
 
-#[Reset]
+#[Finalize]
 class WithReset
 {
     private ?string $name = null;
 
-    public function reset(): void
+    public function finalize(): void
     {
         $this->name = null;
     }
@@ -57,5 +57,5 @@ class WithReset
     }
 }
 
-#[Reset]
+#[Finalize]
 class WithoutReset {}
