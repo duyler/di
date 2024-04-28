@@ -158,10 +158,13 @@ class Container implements ContainerInterface
     #[Override]
     public function selectiveReset(): self
     {
-        $reflections = $this->reflectionStorage->getAll();
+        foreach ($this->reflectionStorage->getAll() as $className => $reflection) {
+            if (false === $this->serviceStorage->has($className)) {
+                continue;
+            }
 
-        foreach ($reflections as $className => $reflection) {
             $attributes = $reflection->getAttributes();
+
             foreach ($attributes as $attributeReflection) {
                 if ($attributeReflection->getName() === Finalize::class) {
                     $service = $this->serviceStorage->get($className);
