@@ -126,8 +126,6 @@ class DependencyMapper
 
     /**
      * @throws InterfaceMapNotFoundException
-     * @throws CircularReferenceException
-     * @throws ReflectionException
      */
     protected function prepareInterface(ReflectionClass $interface, string $className, string $depArgName = ''): string
     {
@@ -154,8 +152,6 @@ class DependencyMapper
     }
 
     /**
-     * @throws ReflectionException
-     * @throws InterfaceMapNotFoundException
      * @throws CircularReferenceException
      */
     protected function resolveDependency(string $className, string $depClassName, string $depArgName = ''): void
