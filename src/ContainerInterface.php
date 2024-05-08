@@ -18,7 +18,7 @@ interface ContainerInterface extends PsrContainerInterface
 
     public function addDefinition(Definition $definition): self;
 
-    public function softReset(): self;
+    public function reset(): self;
 
-    public function selectiveReset(): self;
+    public function finalize(): self;
 }
