@@ -21,7 +21,7 @@ class ResetTest extends TestCase
         $this->assertEquals('test', $obj->getName());
         $obj->setName('test2');
         $this->assertEquals('test2', $obj->getName());
-        $container->selectiveReset();
+        $container->finalize();
         $this->assertNull($obj->getName());
     }
 
@@ -32,7 +32,7 @@ class ResetTest extends TestCase
         $container->get(WithoutReset::class);
 
         $this->expectException(FinalizeNotImplementException::class);
-        $container->selectiveReset();
+        $container->finalize();
     }
 }
 

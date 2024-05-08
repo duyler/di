@@ -148,7 +148,7 @@ class Container implements ContainerInterface
     }
 
     #[Override]
-    public function softReset(): self
+    public function reset(): self
     {
         $this->serviceStorage->reset();
 
@@ -156,7 +156,7 @@ class Container implements ContainerInterface
     }
 
     #[Override]
-    public function selectiveReset(): self
+    public function finalize(): self
     {
         foreach ($this->reflectionStorage->getAll() as $className => $reflection) {
             if (false === $this->serviceStorage->has($className)) {
