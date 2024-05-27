@@ -117,7 +117,7 @@ class Compiler
         if ($this->providerStorage->has($className)) {
             /** @var ProviderInterface $provider */
             $provider = $this->providerStorage->get($className);
-            $arguments   = $provider->getArguments();
+            $arguments = $provider->getArguments();
         }
 
         if (isset($this->externalDefinitions[$className])) {

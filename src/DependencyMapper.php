@@ -42,18 +42,9 @@ class DependencyMapper
             }
         }
 
-        if (isset($this->classMap[$interface])) {
-            return $this->classMap[$interface];
-        }
-
-        return $interface;
+        return $this->classMap[$interface] ?? $interface;
     }
 
-    /**
-     * @throws ReflectionException
-     * @throws InterfaceMapNotFoundException
-     * @throws CircularReferenceException
-     */
     public function resolve(string $className): array
     {
         $this->dependencies = [];
@@ -62,11 +53,6 @@ class DependencyMapper
         return $this->dependencies;
     }
 
-    /**
-     * @throws InterfaceMapNotFoundException
-     * @throws CircularReferenceException
-     * @throws ReflectionException
-     */
     protected function prepareDependencies(string $className): void
     {
         if (!$this->reflectionStorage->has($className)) {
@@ -84,11 +70,6 @@ class DependencyMapper
         }
     }
 
-    /**
-     * @throws InterfaceMapNotFoundException
-     * @throws CircularReferenceException
-     * @throws ReflectionException
-     */
     protected function buildDependencies(ReflectionMethod $constructor, string $className): void
     {
         foreach ($constructor->getParameters() as $param) {
