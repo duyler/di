@@ -23,6 +23,11 @@ class ServiceStorage
         return isset($this->services[$className]);
     }
 
+    public function getAll(): array
+    {
+        return $this->services;
+    }
+
     public function reset(): void
     {
         $this->services = [];

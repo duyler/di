@@ -12,6 +12,7 @@ use Duyler\DependencyInjection\Exception\ResolveDependenciesTreeException;
 use Override;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
+use ReflectionClass;
 use ReflectionException;
 
 use function interface_exists;
@@ -158,9 +159,11 @@ class Container implements ContainerInterface
     #[Override]
     public function finalize(): self
     {
-        foreach ($this->reflectionStorage->getAll() as $className => $reflection) {
-            if (false === $this->serviceStorage->has($className)) {
-                continue;
+        foreach ($this->serviceStorage->getAll() as $className => $service) {
+            if ($this->reflectionStorage->has($className)) {
+                $reflection = $this->reflectionStorage->get($className);
+            } else {
+                $reflection = new ReflectionClass($className);
             }
 
             $attributes = $reflection->getAttributes();
