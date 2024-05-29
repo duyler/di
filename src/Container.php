@@ -18,6 +18,7 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use ReflectionClass;
 use ReflectionException;
+
 use function interface_exists;
 
 class Container implements ContainerInterface
@@ -49,6 +50,7 @@ class Container implements ContainerInterface
             serviceStorage: $this->serviceStorage,
             providerStorage: $this->providerStorage,
             argumentsStorage: $this->argumentsStorage,
+            containerService: new ContainerService($this),
         );
 
         $this->addProviders($containerConfig?->getProviders() ?? []);

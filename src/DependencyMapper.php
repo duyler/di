@@ -24,6 +24,7 @@ class DependencyMapper
         private readonly ServiceStorage $serviceStorage,
         private readonly ProviderStorage $providerStorage,
         private readonly ProviderArgumentsStorage $argumentsStorage,
+        private readonly ContainerService $containerService,
     ) {}
 
     public function bind(array $classMap): void
@@ -124,7 +125,7 @@ class DependencyMapper
 
     private function prepareProviderArguments(ProviderInterface $provider, string $className): array
     {
-        $arguments = $provider->getArguments();
+        $arguments = $provider->getArguments($this->containerService);
         $this->argumentsStorage->set($className, $arguments);
         return $arguments;
     }
