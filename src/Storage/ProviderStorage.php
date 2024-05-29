@@ -15,9 +15,9 @@ class ProviderStorage
         $this->providers[$id] = $provider;
     }
 
-    public function get(string $id): ?ProviderInterface
+    public function get(string $id): ProviderInterface
     {
-        return $this->providers[$id] ?? null;
+        return $this->providers[$id];
     }
 
     public function has(string $id): bool
