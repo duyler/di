@@ -66,16 +66,15 @@ class DependencyMapper
 
         $constructor = $this->reflectionStorage->get($className)->getConstructor();
 
-        if ($this->providerStorage->has($className)) {
-            $provider = $this->providerStorage->get($className);
-            $arguments = $this->prepareProviderArguments($provider, $className);
-            if (count($constructor->getParameters()) === count($arguments)) {
-                $this->dependencies[$className] = [];
-                return;
-            }
-        }
-
         if (null !== $constructor && false === $this->serviceStorage->has($className)) {
+            if ($this->providerStorage->has($className)) {
+                $provider = $this->providerStorage->get($className);
+                $arguments = $this->prepareProviderArguments($provider, $className);
+                if (count($constructor->getParameters()) === count($arguments)) {
+                    $this->dependencies[$className] = [];
+                    return;
+                }
+            }
             $this->buildDependencies($constructor, $className);
         }
     }
