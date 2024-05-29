@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Duyler\DependencyInjection;
+namespace Duyler\DependencyInjection\Storage;
 
 class ServiceStorage
 {
