@@ -7,7 +7,7 @@ namespace Duyler\DependencyInjection;
 class ContainerService
 {
     public function __construct(
-        private ContainerInterface $container
+        private ContainerInterface $container,
     ) {}
 
     public function getInstance(string $class): object
