@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Duyler\DependencyInjection;
+namespace Duyler\DependencyInjection\Storage;
 
 use Duyler\DependencyInjection\Provider\ProviderInterface;
 
@@ -15,9 +15,9 @@ class ProviderStorage
         $this->providers[$id] = $provider;
     }
 
-    public function get(string $id): ?ProviderInterface
+    public function get(string $id): ProviderInterface
     {
-        return $this->providers[$id] ?? null;
+        return $this->providers[$id];
     }
 
     public function has(string $id): bool

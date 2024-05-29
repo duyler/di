@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Duyler\DependencyInjection;
 
 use Duyler\DependencyInjection\Exception\ResolveDependenciesTreeException;
-use Duyler\DependencyInjection\Provider\ProviderInterface;
+use Duyler\DependencyInjection\Storage\ProviderArgumentsStorage;
+use Duyler\DependencyInjection\Storage\ProviderStorage;
+use Duyler\DependencyInjection\Storage\ServiceStorage;
 use Throwable;
 
 use function current;
@@ -24,6 +26,7 @@ class Compiler
     public function __construct(
         private readonly ServiceStorage $serviceStorage,
         private readonly ProviderStorage $providerStorage,
+        private readonly ProviderArgumentsStorage $argumentsStorage,
     ) {}
 
     public function addDefinition(Definition $definition): void
@@ -67,7 +70,7 @@ class Compiler
     /**
      * @throws ResolveDependenciesTreeException
      */
-    protected function iterateDependenciesTree(): void
+    private function iterateDependenciesTree(): void
     {
         $deps = end($this->dependenciesTree);
 
@@ -87,7 +90,7 @@ class Compiler
     /**
      * @throws ResolveDependenciesTreeException
      */
-    protected function instanceClass(string $className, array $deps = []): void
+    private function instanceClass(string $className, array $deps = []): void
     {
         $dependencies = [];
 
@@ -109,16 +112,9 @@ class Compiler
     /**
      * @throws ResolveDependenciesTreeException
      */
-    protected function prepareDependencies(string $className, array $dependencies = []): void
+    private function prepareDependencies(string $className, array $dependencies = []): void
     {
-        $arguments = [];
-        $provider = null;
-
-        if ($this->providerStorage->has($className)) {
-            /** @var ProviderInterface $provider */
-            $provider = $this->providerStorage->get($className);
-            $arguments   = $provider->getArguments();
-        }
+        $arguments = $this->argumentsStorage->get($className);
 
         if (isset($this->externalDefinitions[$className])) {
             $arguments = $this->externalDefinitions[$className]->arguments + $arguments;
@@ -127,7 +123,9 @@ class Compiler
         if (false === $this->hasDefinition($className)) {
             try {
                 $definition = new $className(...$arguments + $dependencies);
-                $provider?->accept($definition);
+                if ($this->providerStorage->has($className)) {
+                    $this->providerStorage->get($className)->accept($definition);
+                }
                 $this->setDefinitions($className, $definition);
             } catch (Throwable $exception) {
                 throw new ResolveDependenciesTreeException($exception->getMessage() . ' in ' . $className);

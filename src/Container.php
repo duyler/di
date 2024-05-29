@@ -6,12 +6,17 @@ namespace Duyler\DependencyInjection;
 
 use Duyler\DependencyInjection\Attribute\Finalize;
 use Duyler\DependencyInjection\Exception\CircularReferenceException;
-use Duyler\DependencyInjection\Exception\InterfaceMapNotFoundException;
 use Duyler\DependencyInjection\Exception\FinalizeNotImplementException;
+use Duyler\DependencyInjection\Exception\InterfaceMapNotFoundException;
 use Duyler\DependencyInjection\Exception\ResolveDependenciesTreeException;
+use Duyler\DependencyInjection\Storage\ProviderArgumentsStorage;
+use Duyler\DependencyInjection\Storage\ProviderStorage;
+use Duyler\DependencyInjection\Storage\ReflectionStorage;
+use Duyler\DependencyInjection\Storage\ServiceStorage;
 use Override;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
+use ReflectionClass;
 use ReflectionException;
 
 use function interface_exists;
@@ -23,6 +28,7 @@ class Container implements ContainerInterface
     protected readonly ServiceStorage $serviceStorage;
     protected readonly ProviderStorage $providerStorage;
     protected readonly ReflectionStorage $reflectionStorage;
+    protected readonly ProviderArgumentsStorage $argumentsStorage;
     private array $dependenciesTree = [];
 
     public function __construct(
@@ -31,11 +37,20 @@ class Container implements ContainerInterface
         $this->serviceStorage = new ServiceStorage();
         $this->providerStorage = new ProviderStorage();
         $this->reflectionStorage = new ReflectionStorage();
-        $this->compiler = new Compiler($this->serviceStorage, $this->providerStorage);
+        $this->argumentsStorage = new ProviderArgumentsStorage();
+
+        $this->compiler = new Compiler(
+            serviceStorage: $this->serviceStorage,
+            providerStorage: $this->providerStorage,
+            argumentsStorage: $this->argumentsStorage,
+        );
+
         $this->dependencyMapper = new DependencyMapper(
             reflectionStorage: $this->reflectionStorage,
             serviceStorage: $this->serviceStorage,
             providerStorage: $this->providerStorage,
+            argumentsStorage: $this->argumentsStorage,
+            containerService: new ContainerService($this),
         );
 
         $this->addProviders($containerConfig?->getProviders() ?? []);
@@ -158,9 +173,11 @@ class Container implements ContainerInterface
     #[Override]
     public function finalize(): self
     {
-        foreach ($this->reflectionStorage->getAll() as $className => $reflection) {
-            if (false === $this->serviceStorage->has($className)) {
-                continue;
+        foreach ($this->serviceStorage->getAll() as $className => $service) {
+            if ($this->reflectionStorage->has($className)) {
+                $reflection = $this->reflectionStorage->get($className);
+            } else {
+                $reflection = new ReflectionClass($className);
             }
 
             $attributes = $reflection->getAttributes();
