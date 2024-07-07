@@ -13,4 +13,6 @@ interface ProviderInterface
     public function bind(): array;
 
     public function accept(object $definition): void;
+
+    public function finalizer(): ?callable;
 }

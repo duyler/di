@@ -19,4 +19,9 @@ abstract class AbstractProvider implements ProviderInterface
     }
 
     public function accept(object $definition): void {}
+
+    public function finalizer(): ?callable
+    {
+        return null;
+    }
 }

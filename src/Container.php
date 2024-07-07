@@ -6,6 +6,7 @@ namespace Duyler\DependencyInjection;
 
 use Duyler\DependencyInjection\Attribute\Finalize;
 use Duyler\DependencyInjection\Exception\FinalizeNotImplementException;
+use Duyler\DependencyInjection\Exception\ServiceForFinalizeNotFoundException;
 use Duyler\DependencyInjection\Provider\ProviderInterface;
 use Duyler\DependencyInjection\Storage\ProviderArgumentsStorage;
 use Duyler\DependencyInjection\Storage\ProviderStorage;
@@ -25,6 +26,7 @@ class Container implements ContainerInterface
     protected readonly ReflectionStorage $reflectionStorage;
     protected readonly ProviderArgumentsStorage $argumentsStorage;
     private array $dependenciesTree = [];
+    private array $finalizers = [];
 
     public function __construct(
         ?ContainerConfig $containerConfig = null,
@@ -115,6 +117,12 @@ class Container implements ContainerInterface
             if (array_key_exists($bindClassName, $classMap)) {
                 $this->providerStorage->add($classMap[$bindClassName], $provider);
             }
+
+            $finalizer = $provider->finalizer();
+
+            if (null !== $finalizer) {
+                $this->finalizers[$bindClassName] = $finalizer;
+            }
         }
 
         return $this;
@@ -172,6 +180,26 @@ class Container implements ContainerInterface
             }
         }
 
+        foreach ($this->finalizers as $class => $finalizer) {
+            $classMap = $this->dependencyMapper->getClassMap();
+
+            $class = $classMap[$class] ?? $class;
+
+            if (false === $this->serviceStorage->has($class)) {
+                throw new ServiceForFinalizeNotFoundException($class);
+            }
+
+            $service = $this->serviceStorage->get($class);
+            $finalizer($service);
+        }
+
+        return $this;
+    }
+
+    #[Override]
+    public function addFinalizer(string $class, callable $finalizer): self
+    {
+        $this->finalizers[$class] = $finalizer;
         return $this;
     }
 }

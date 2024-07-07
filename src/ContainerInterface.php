@@ -21,4 +21,6 @@ interface ContainerInterface extends PsrContainerInterface
     public function reset(): self;
 
     public function finalize(): self;
+
+    public function addFinalizer(string $class, callable $finalizer): self;
 }
