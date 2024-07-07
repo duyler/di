@@ -9,6 +9,7 @@ use Duyler\DependencyInjection\Exception\FinalizeNotImplementException;
 use Duyler\DependencyInjection\Exception\ServiceForFinalizeNotFoundException;
 use Duyler\DependencyInjection\Provider\ProviderInterface;
 use Duyler\DependencyInjection\Storage\ProviderArgumentsStorage;
+use Duyler\DependencyInjection\Storage\ProviderFactoryServiceStorage;
 use Duyler\DependencyInjection\Storage\ProviderStorage;
 use Duyler\DependencyInjection\Storage\ReflectionStorage;
 use Duyler\DependencyInjection\Storage\ServiceStorage;
@@ -19,12 +20,13 @@ use function interface_exists;
 
 class Container implements ContainerInterface
 {
-    protected readonly Compiler $compiler;
-    protected readonly DependencyMapper $dependencyMapper;
-    protected readonly ServiceStorage $serviceStorage;
-    protected readonly ProviderStorage $providerStorage;
-    protected readonly ReflectionStorage $reflectionStorage;
-    protected readonly ProviderArgumentsStorage $argumentsStorage;
+    private readonly Compiler $compiler;
+    private readonly DependencyMapper $dependencyMapper;
+    private readonly ServiceStorage $serviceStorage;
+    private readonly ProviderStorage $providerStorage;
+    private readonly ReflectionStorage $reflectionStorage;
+    private readonly ProviderArgumentsStorage $argumentsStorage;
+    private readonly ProviderFactoryServiceStorage $providerFactoryServiceStorage;
     private array $dependenciesTree = [];
     private array $finalizers = [];
 
@@ -35,11 +37,13 @@ class Container implements ContainerInterface
         $this->providerStorage = new ProviderStorage();
         $this->reflectionStorage = new ReflectionStorage();
         $this->argumentsStorage = new ProviderArgumentsStorage();
+        $this->providerFactoryServiceStorage = new ProviderFactoryServiceStorage();
 
         $this->compiler = new Compiler(
             serviceStorage: $this->serviceStorage,
             providerStorage: $this->providerStorage,
             argumentsStorage: $this->argumentsStorage,
+            providerFactoryServiceStorage: $this->providerFactoryServiceStorage,
         );
 
         $this->dependencyMapper = new DependencyMapper(
@@ -48,6 +52,7 @@ class Container implements ContainerInterface
             providerStorage: $this->providerStorage,
             argumentsStorage: $this->argumentsStorage,
             containerService: new ContainerService($this),
+            providerFactoryServiceStorage: $this->providerFactoryServiceStorage,
         );
 
         $this->addProviders($containerConfig?->getProviders() ?? []);
@@ -150,7 +155,8 @@ class Container implements ContainerInterface
     public function reset(): self
     {
         $this->serviceStorage->reset();
-
+        $this->providerFactoryServiceStorage->reset();
+        $this->argumentsStorage->reset();
         return $this;
     }
 

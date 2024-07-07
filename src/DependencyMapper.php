@@ -8,6 +8,7 @@ use Duyler\DependencyInjection\Exception\CircularReferenceException;
 use Duyler\DependencyInjection\Exception\InterfaceMapNotFoundException;
 use Duyler\DependencyInjection\Provider\ProviderInterface;
 use Duyler\DependencyInjection\Storage\ProviderArgumentsStorage;
+use Duyler\DependencyInjection\Storage\ProviderFactoryServiceStorage;
 use Duyler\DependencyInjection\Storage\ProviderStorage;
 use Duyler\DependencyInjection\Storage\ReflectionStorage;
 use Duyler\DependencyInjection\Storage\ServiceStorage;
@@ -25,6 +26,7 @@ class DependencyMapper
         private readonly ProviderStorage $providerStorage,
         private readonly ProviderArgumentsStorage $argumentsStorage,
         private readonly ContainerService $containerService,
+        private readonly ProviderFactoryServiceStorage $providerFactoryServiceStorage,
     ) {}
 
     public function bind(array $classMap): void
@@ -70,6 +72,15 @@ class DependencyMapper
             if ($this->providerStorage->has($className)) {
                 $provider = $this->providerStorage->get($className);
                 $arguments = $this->prepareProviderArguments($provider, $className);
+
+                $service = $provider->factory($this->containerService);
+
+                if (null !== $service) {
+                    $this->dependencies[$className] = [];
+                    $this->providerFactoryServiceStorage->add($className, $service);
+                    return;
+                }
+
                 if (count($constructor->getParameters()) === count($arguments)) {
                     $this->dependencies[$className] = [];
                     return;

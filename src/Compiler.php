@@ -6,6 +6,7 @@ namespace Duyler\DependencyInjection;
 
 use Duyler\DependencyInjection\Exception\ResolveDependenciesTreeException;
 use Duyler\DependencyInjection\Storage\ProviderArgumentsStorage;
+use Duyler\DependencyInjection\Storage\ProviderFactoryServiceStorage;
 use Duyler\DependencyInjection\Storage\ProviderStorage;
 use Duyler\DependencyInjection\Storage\ServiceStorage;
 use Throwable;
@@ -27,6 +28,7 @@ class Compiler
         private readonly ServiceStorage $serviceStorage,
         private readonly ProviderStorage $providerStorage,
         private readonly ProviderArgumentsStorage $argumentsStorage,
+        private readonly ProviderFactoryServiceStorage $providerFactoryServiceStorage,
     ) {}
 
     public function addDefinition(Definition $definition): void
@@ -121,11 +123,23 @@ class Compiler
         }
 
         if (false === $this->hasDefinition($className)) {
+
             try {
-                $definition = new $className(...$arguments + $dependencies);
-                if ($this->providerStorage->has($className)) {
-                    $this->providerStorage->get($className)->accept($definition);
+                $definition = null;
+
+                if ($this->providerFactoryServiceStorage->has($className)) {
+                    $definition = $this->providerFactoryServiceStorage->get($className);
                 }
+
+                if (null === $definition) {
+                    $definition = new $className(...$arguments + $dependencies);
+                }
+
+                if ($this->providerStorage->has($className)) {
+                    $provider = $this->providerStorage->get($className);
+                    $provider->accept($definition);
+                }
+
                 $this->setDefinitions($className, $definition);
             } catch (Throwable $exception) {
                 throw new ResolveDependenciesTreeException($exception->getMessage() . ' in ' . $className);

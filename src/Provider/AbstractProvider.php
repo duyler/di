@@ -24,4 +24,9 @@ abstract class AbstractProvider implements ProviderInterface
     {
         return null;
     }
+
+    public function factory(ContainerService $containerService): ?object
+    {
+        return null;
+    }
 }
