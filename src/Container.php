@@ -5,19 +5,14 @@ declare(strict_types=1);
 namespace Duyler\DependencyInjection;
 
 use Duyler\DependencyInjection\Attribute\Finalize;
-use Duyler\DependencyInjection\Exception\CircularReferenceException;
 use Duyler\DependencyInjection\Exception\FinalizeNotImplementException;
-use Duyler\DependencyInjection\Exception\InterfaceMapNotFoundException;
-use Duyler\DependencyInjection\Exception\ResolveDependenciesTreeException;
+use Duyler\DependencyInjection\Provider\ProviderInterface;
 use Duyler\DependencyInjection\Storage\ProviderArgumentsStorage;
 use Duyler\DependencyInjection\Storage\ProviderStorage;
 use Duyler\DependencyInjection\Storage\ReflectionStorage;
 use Duyler\DependencyInjection\Storage\ServiceStorage;
 use Override;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\NotFoundExceptionInterface;
 use ReflectionClass;
-use ReflectionException;
 
 use function interface_exists;
 
@@ -61,14 +56,6 @@ class Container implements ContainerInterface
         }
     }
 
-    /**
-     * @throws ResolveDependenciesTreeException
-     * @throws InterfaceMapNotFoundException
-     * @throws NotFoundExceptionInterface
-     * @throws CircularReferenceException
-     * @throws ReflectionException
-     * @throws ContainerExceptionInterface
-     */
     #[Override]
     public function get(string $id): object
     {
@@ -93,14 +80,6 @@ class Container implements ContainerInterface
         return $this;
     }
 
-    /**
-     * @throws ResolveDependenciesTreeException
-     * @throws InterfaceMapNotFoundException
-     * @throws NotFoundExceptionInterface
-     * @throws CircularReferenceException
-     * @throws ContainerExceptionInterface
-     * @throws ReflectionException
-     */
     private function make(string $className): mixed
     {
         if (interface_exists($className)) {
@@ -128,8 +107,14 @@ class Container implements ContainerInterface
     public function addProviders(array $providers): self
     {
         foreach ($providers as $bindClassName => $providerClassName) {
+            /** @var ProviderInterface $provider */
             $provider = $this->makeRequiredObject($providerClassName);
             $this->providerStorage->add($bindClassName, $provider);
+            $this->dependencyMapper->bind($provider->bind());
+            $classMap = $provider->bind();
+            if (array_key_exists($bindClassName, $classMap)) {
+                $this->providerStorage->add($classMap[$bindClassName], $provider);
+            }
         }
 
         return $this;
@@ -143,20 +128,11 @@ class Container implements ContainerInterface
         return $this;
     }
 
-    /**
-     * @throws ResolveDependenciesTreeException
-     * @throws NotFoundExceptionInterface
-     * @throws InterfaceMapNotFoundException
-     * @throws CircularReferenceException
-     * @throws ContainerExceptionInterface
-     * @throws ReflectionException
-     */
     protected function makeRequiredObject(string $className): mixed
     {
         if (!isset($this->dependenciesTree[$className])) {
             $this->dependenciesTree[$className] = $this->dependencyMapper->resolve($className);
         }
-
         $this->compiler->compile($className, $this->dependenciesTree[$className]);
 
         return $this->get($className);

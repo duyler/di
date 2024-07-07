@@ -60,7 +60,7 @@ class DependencyMapper
 
     private function prepareDependencies(string $className): void
     {
-        if (!$this->reflectionStorage->has($className)) {
+        if (false === $this->reflectionStorage->has($className)) {
             $this->reflectionStorage->set($className, new ReflectionClass($className));
         }
 
@@ -99,7 +99,7 @@ class DependencyMapper
 
             $this->reflectionStorage->set($paramClassName, new ReflectionClass($paramClassName));
 
-            $class = $this->reflectionStorage->get($paramClassName);
+            $reflectionClass = $this->reflectionStorage->get($paramClassName);
 
             $paramArgClassName = $param->getName();
 
@@ -111,12 +111,12 @@ class DependencyMapper
                 }
             }
 
-            if ($class->isInterface()) {
-                $this->prepareInterface($class, $className, $paramArgClassName);
+            if ($reflectionClass->isInterface()) {
+                $this->prepareInterface($reflectionClass, $className, $paramArgClassName);
                 continue;
             }
 
-            $depClassName = $class->getName();
+            $depClassName = $reflectionClass->getName();
 
             $this->resolveDependency($className, $depClassName, $paramArgClassName);
         }
@@ -164,7 +164,7 @@ class DependencyMapper
             throw new CircularReferenceException($className, $depClassName);
         }
 
-        $this->dependencies[$className][$depArgName] = $depClassName;
         $this->prepareDependencies($depClassName);
+        $this->dependencies[$className][$depArgName] = $depClassName;
     }
 }
