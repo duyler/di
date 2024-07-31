@@ -8,6 +8,8 @@ use Psr\Container\ContainerInterface as PsrContainerInterface;
 
 interface ContainerInterface extends PsrContainerInterface
 {
+    public function get(string $id): object;
+
     /**
      * @param array<string, string> $classMap
      */
