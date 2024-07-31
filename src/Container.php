@@ -87,7 +87,7 @@ class Container implements ContainerInterface
         return $this;
     }
 
-    private function make(string $className): mixed
+    private function make(string $className): object
     {
         if (interface_exists($className)) {
             $className = $this->dependencyMapper->getBind($className);
@@ -141,7 +141,7 @@ class Container implements ContainerInterface
         return $this;
     }
 
-    protected function makeRequiredObject(string $className): mixed
+    protected function makeRequiredObject(string $className): object
     {
         if (!isset($this->dependenciesTree[$className])) {
             $this->dependenciesTree[$className] = $this->dependencyMapper->resolve($className);
@@ -149,6 +149,12 @@ class Container implements ContainerInterface
         $this->compiler->compile($className, $this->dependenciesTree[$className]);
 
         return $this->get($className);
+    }
+
+    #[Override]
+    public function getDependencyTree(): array
+    {
+        return $this->dependenciesTree;
     }
 
     #[Override]
