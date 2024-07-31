@@ -17,4 +17,9 @@ class ProviderArgumentsStorage
     {
         $this->arguments[$className] = $arguments;
     }
+
+    public function reset(): void
+    {
+        $this->arguments = [];
+    }
 }

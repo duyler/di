@@ -8,6 +8,7 @@ use Duyler\DependencyInjection\Exception\CircularReferenceException;
 use Duyler\DependencyInjection\Exception\InterfaceMapNotFoundException;
 use Duyler\DependencyInjection\Provider\ProviderInterface;
 use Duyler\DependencyInjection\Storage\ProviderArgumentsStorage;
+use Duyler\DependencyInjection\Storage\ProviderFactoryServiceStorage;
 use Duyler\DependencyInjection\Storage\ProviderStorage;
 use Duyler\DependencyInjection\Storage\ReflectionStorage;
 use Duyler\DependencyInjection\Storage\ServiceStorage;
@@ -25,6 +26,7 @@ class DependencyMapper
         private readonly ProviderStorage $providerStorage,
         private readonly ProviderArgumentsStorage $argumentsStorage,
         private readonly ContainerService $containerService,
+        private readonly ProviderFactoryServiceStorage $providerFactoryServiceStorage,
     ) {}
 
     public function bind(array $classMap): void
@@ -60,7 +62,7 @@ class DependencyMapper
 
     private function prepareDependencies(string $className): void
     {
-        if (!$this->reflectionStorage->has($className)) {
+        if (false === $this->reflectionStorage->has($className)) {
             $this->reflectionStorage->set($className, new ReflectionClass($className));
         }
 
@@ -70,6 +72,15 @@ class DependencyMapper
             if ($this->providerStorage->has($className)) {
                 $provider = $this->providerStorage->get($className);
                 $arguments = $this->prepareProviderArguments($provider, $className);
+
+                $service = $provider->factory($this->containerService);
+
+                if (null !== $service) {
+                    $this->dependencies[$className] = [];
+                    $this->providerFactoryServiceStorage->add($className, $service);
+                    return;
+                }
+
                 if (count($constructor->getParameters()) === count($arguments)) {
                     $this->dependencies[$className] = [];
                     return;
@@ -99,7 +110,7 @@ class DependencyMapper
 
             $this->reflectionStorage->set($paramClassName, new ReflectionClass($paramClassName));
 
-            $class = $this->reflectionStorage->get($paramClassName);
+            $reflectionClass = $this->reflectionStorage->get($paramClassName);
 
             $paramArgClassName = $param->getName();
 
@@ -111,12 +122,12 @@ class DependencyMapper
                 }
             }
 
-            if ($class->isInterface()) {
-                $this->prepareInterface($class, $className, $paramArgClassName);
+            if ($reflectionClass->isInterface()) {
+                $this->prepareInterface($reflectionClass, $className, $paramArgClassName);
                 continue;
             }
 
-            $depClassName = $class->getName();
+            $depClassName = $reflectionClass->getName();
 
             $this->resolveDependency($className, $depClassName, $paramArgClassName);
         }
@@ -164,7 +175,7 @@ class DependencyMapper
             throw new CircularReferenceException($className, $depClassName);
         }
 
-        $this->dependencies[$className][$depArgName] = $depClassName;
         $this->prepareDependencies($depClassName);
+        $this->dependencies[$className][$depArgName] = $depClassName;
     }
 }

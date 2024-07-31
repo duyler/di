@@ -19,4 +19,14 @@ abstract class AbstractProvider implements ProviderInterface
     }
 
     public function accept(object $definition): void {}
+
+    public function finalizer(): ?callable
+    {
+        return null;
+    }
+
+    public function factory(ContainerService $containerService): ?object
+    {
+        return null;
+    }
 }

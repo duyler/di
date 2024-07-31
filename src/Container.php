@@ -5,31 +5,30 @@ declare(strict_types=1);
 namespace Duyler\DependencyInjection;
 
 use Duyler\DependencyInjection\Attribute\Finalize;
-use Duyler\DependencyInjection\Exception\CircularReferenceException;
 use Duyler\DependencyInjection\Exception\FinalizeNotImplementException;
-use Duyler\DependencyInjection\Exception\InterfaceMapNotFoundException;
-use Duyler\DependencyInjection\Exception\ResolveDependenciesTreeException;
+use Duyler\DependencyInjection\Exception\ServiceForFinalizeNotFoundException;
+use Duyler\DependencyInjection\Provider\ProviderInterface;
 use Duyler\DependencyInjection\Storage\ProviderArgumentsStorage;
+use Duyler\DependencyInjection\Storage\ProviderFactoryServiceStorage;
 use Duyler\DependencyInjection\Storage\ProviderStorage;
 use Duyler\DependencyInjection\Storage\ReflectionStorage;
 use Duyler\DependencyInjection\Storage\ServiceStorage;
 use Override;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\NotFoundExceptionInterface;
 use ReflectionClass;
-use ReflectionException;
 
 use function interface_exists;
 
 class Container implements ContainerInterface
 {
-    protected readonly Compiler $compiler;
-    protected readonly DependencyMapper $dependencyMapper;
-    protected readonly ServiceStorage $serviceStorage;
-    protected readonly ProviderStorage $providerStorage;
-    protected readonly ReflectionStorage $reflectionStorage;
-    protected readonly ProviderArgumentsStorage $argumentsStorage;
+    private readonly Compiler $compiler;
+    private readonly DependencyMapper $dependencyMapper;
+    private readonly ServiceStorage $serviceStorage;
+    private readonly ProviderStorage $providerStorage;
+    private readonly ReflectionStorage $reflectionStorage;
+    private readonly ProviderArgumentsStorage $argumentsStorage;
+    private readonly ProviderFactoryServiceStorage $providerFactoryServiceStorage;
     private array $dependenciesTree = [];
+    private array $finalizers = [];
 
     public function __construct(
         ?ContainerConfig $containerConfig = null,
@@ -38,11 +37,13 @@ class Container implements ContainerInterface
         $this->providerStorage = new ProviderStorage();
         $this->reflectionStorage = new ReflectionStorage();
         $this->argumentsStorage = new ProviderArgumentsStorage();
+        $this->providerFactoryServiceStorage = new ProviderFactoryServiceStorage();
 
         $this->compiler = new Compiler(
             serviceStorage: $this->serviceStorage,
             providerStorage: $this->providerStorage,
             argumentsStorage: $this->argumentsStorage,
+            providerFactoryServiceStorage: $this->providerFactoryServiceStorage,
         );
 
         $this->dependencyMapper = new DependencyMapper(
@@ -51,6 +52,7 @@ class Container implements ContainerInterface
             providerStorage: $this->providerStorage,
             argumentsStorage: $this->argumentsStorage,
             containerService: new ContainerService($this),
+            providerFactoryServiceStorage: $this->providerFactoryServiceStorage,
         );
 
         $this->addProviders($containerConfig?->getProviders() ?? []);
@@ -61,14 +63,6 @@ class Container implements ContainerInterface
         }
     }
 
-    /**
-     * @throws ResolveDependenciesTreeException
-     * @throws InterfaceMapNotFoundException
-     * @throws NotFoundExceptionInterface
-     * @throws CircularReferenceException
-     * @throws ReflectionException
-     * @throws ContainerExceptionInterface
-     */
     #[Override]
     public function get(string $id): object
     {
@@ -93,15 +87,7 @@ class Container implements ContainerInterface
         return $this;
     }
 
-    /**
-     * @throws ResolveDependenciesTreeException
-     * @throws InterfaceMapNotFoundException
-     * @throws NotFoundExceptionInterface
-     * @throws CircularReferenceException
-     * @throws ContainerExceptionInterface
-     * @throws ReflectionException
-     */
-    private function make(string $className): mixed
+    private function make(string $className): object
     {
         if (interface_exists($className)) {
             $className = $this->dependencyMapper->getBind($className);
@@ -128,8 +114,20 @@ class Container implements ContainerInterface
     public function addProviders(array $providers): self
     {
         foreach ($providers as $bindClassName => $providerClassName) {
+            /** @var ProviderInterface $provider */
             $provider = $this->makeRequiredObject($providerClassName);
             $this->providerStorage->add($bindClassName, $provider);
+            $this->dependencyMapper->bind($provider->bind());
+            $classMap = $provider->bind();
+            if (array_key_exists($bindClassName, $classMap)) {
+                $this->providerStorage->add($classMap[$bindClassName], $provider);
+            }
+
+            $finalizer = $provider->finalizer();
+
+            if (null !== $finalizer) {
+                $this->finalizers[$bindClassName] = $finalizer;
+            }
         }
 
         return $this;
@@ -143,30 +141,28 @@ class Container implements ContainerInterface
         return $this;
     }
 
-    /**
-     * @throws ResolveDependenciesTreeException
-     * @throws NotFoundExceptionInterface
-     * @throws InterfaceMapNotFoundException
-     * @throws CircularReferenceException
-     * @throws ContainerExceptionInterface
-     * @throws ReflectionException
-     */
-    protected function makeRequiredObject(string $className): mixed
+    protected function makeRequiredObject(string $className): object
     {
         if (!isset($this->dependenciesTree[$className])) {
             $this->dependenciesTree[$className] = $this->dependencyMapper->resolve($className);
         }
-
         $this->compiler->compile($className, $this->dependenciesTree[$className]);
 
         return $this->get($className);
     }
 
     #[Override]
+    public function getDependencyTree(): array
+    {
+        return $this->dependenciesTree;
+    }
+
+    #[Override]
     public function reset(): self
     {
         $this->serviceStorage->reset();
-
+        $this->providerFactoryServiceStorage->reset();
+        $this->argumentsStorage->reset();
         return $this;
     }
 
@@ -196,6 +192,26 @@ class Container implements ContainerInterface
             }
         }
 
+        foreach ($this->finalizers as $class => $finalizer) {
+            $classMap = $this->dependencyMapper->getClassMap();
+
+            $class = $classMap[$class] ?? $class;
+
+            if (false === $this->serviceStorage->has($class)) {
+                throw new ServiceForFinalizeNotFoundException($class);
+            }
+
+            $service = $this->serviceStorage->get($class);
+            $finalizer($service);
+        }
+
+        return $this;
+    }
+
+    #[Override]
+    public function addFinalizer(string $class, callable $finalizer): self
+    {
+        $this->finalizers[$class] = $finalizer;
         return $this;
     }
 }
