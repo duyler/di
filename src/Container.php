@@ -6,7 +6,6 @@ namespace Duyler\DependencyInjection;
 
 use Duyler\DependencyInjection\Attribute\Finalize;
 use Duyler\DependencyInjection\Exception\FinalizeNotImplementException;
-use Duyler\DependencyInjection\Exception\ServiceForFinalizeNotFoundException;
 use Duyler\DependencyInjection\Provider\ProviderInterface;
 use Duyler\DependencyInjection\Storage\ProviderArgumentsStorage;
 use Duyler\DependencyInjection\Storage\ProviderFactoryServiceStorage;
@@ -197,12 +196,10 @@ class Container implements ContainerInterface
 
             $class = $classMap[$class] ?? $class;
 
-            if (false === $this->serviceStorage->has($class)) {
-                throw new ServiceForFinalizeNotFoundException($class);
+            if ($this->serviceStorage->has($class)) {
+                $service = $this->serviceStorage->get($class);
+                $finalizer($service);
             }
-
-            $service = $this->serviceStorage->get($class);
-            $finalizer($service);
         }
 
         return $this;
