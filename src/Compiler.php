@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Duyler\DependencyInjection;
+namespace Duyler\DI;
 
-use Duyler\DependencyInjection\Exception\ResolveDependenciesTreeException;
-use Duyler\DependencyInjection\Storage\ProviderArgumentsStorage;
-use Duyler\DependencyInjection\Storage\ProviderFactoryServiceStorage;
-use Duyler\DependencyInjection\Storage\ProviderStorage;
-use Duyler\DependencyInjection\Storage\ServiceStorage;
+use Duyler\DI\Exception\ResolveDependenciesTreeException;
+use Duyler\DI\Storage\ProviderArgumentsStorage;
+use Duyler\DI\Storage\ProviderFactoryServiceStorage;
+use Duyler\DI\Storage\ProviderStorage;
+use Duyler\DI\Storage\ServiceStorage;
 use Throwable;
 
 use function current;

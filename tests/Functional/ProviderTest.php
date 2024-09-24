@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Duyler\DependencyInjection\Test\Functional;
+namespace Duyler\DI\Test\Functional;
 
-use Duyler\DependencyInjection\Container;
-use Duyler\DependencyInjection\Provider\AbstractProvider;
+use Duyler\DI\Container;
+use Duyler\DI\Provider\AbstractProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Duyler\DependencyInjection\Storage;
+namespace Duyler\DI\Storage;
 
-use Duyler\DependencyInjection\Provider\ProviderInterface;
+use Duyler\DI\Provider\ProviderInterface;
 
 class ProviderStorage
 {

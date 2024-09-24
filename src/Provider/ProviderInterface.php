@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Duyler\DependencyInjection\Provider;
+namespace Duyler\DI\Provider;
 
-use Duyler\DependencyInjection\ContainerService;
+use Duyler\DI\ContainerService;
 
 interface ProviderInterface
 {

@@ -1,4 +1,4 @@
-![build](https://github.com/duyler/dependency-injection/workflows/build/badge.svg)
+![build](https://github.com/duyler/di/workflows/build/badge.svg)
 # The dependency injection container
 
 ### This package makes it possible to quickly connect the DI-container to your project.
@@ -9,7 +9,7 @@ The container can be used both in automatic mode, using type hints in class cons
 **Example automatically make instance**
 
 ```php
-use Duyler\DependencyInjection\Container;
+use Duyler\DI\Container;
 use YourClass;
 
 $container = new Container;
@@ -35,7 +35,7 @@ class YourClass
 ```
 
 ```php
-use Duyler\DependencyInjection\Provider\AbstractProvider
+use Duyler\DI\Provider\AbstractProvider
 
 class ClassProvider extends AbstractProvider
 {

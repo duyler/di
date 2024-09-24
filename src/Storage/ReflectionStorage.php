@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Duyler\DependencyInjection\Storage;
+namespace Duyler\DI\Storage;
 
 use ReflectionClass;
 
