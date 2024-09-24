@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Duyler\DependencyInjection;
+namespace Duyler\DI;
 
 class ContainerConfig
 {

@@ -1,5 +1,5 @@
 {
-    "name": "duyler/dependency-injection",
+    "name": "duyler/di",
     "type": "library",
     "description": "Dependency injection container",
     "license": "MIT",
@@ -24,12 +24,12 @@
     "minimum-stability": "dev",
     "autoload": {
         "psr-4": {
-            "Duyler\\DependencyInjection\\": "src/"
+            "Duyler\\DI\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Duyler\\DependencyInjection\\Test\\": ["tests/"]
+            "Duyler\\DI\\Test\\": ["tests/"]
         }
     }
 }

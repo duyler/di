@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Duyler\DependencyInjection\Test\Unit;
+namespace Duyler\DI\Test\Unit;
 
-use Duyler\DependencyInjection\Container;
+use Duyler\DI\Container;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use stdClass;

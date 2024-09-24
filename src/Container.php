@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Duyler\DependencyInjection;
+namespace Duyler\DI;
 
-use Duyler\DependencyInjection\Attribute\Finalize;
-use Duyler\DependencyInjection\Exception\FinalizeNotImplementException;
-use Duyler\DependencyInjection\Provider\ProviderInterface;
-use Duyler\DependencyInjection\Storage\ProviderArgumentsStorage;
-use Duyler\DependencyInjection\Storage\ProviderFactoryServiceStorage;
-use Duyler\DependencyInjection\Storage\ProviderStorage;
-use Duyler\DependencyInjection\Storage\ReflectionStorage;
-use Duyler\DependencyInjection\Storage\ServiceStorage;
+use Duyler\DI\Attribute\Finalize;
+use Duyler\DI\Exception\FinalizeNotImplementException;
+use Duyler\DI\Provider\ProviderInterface;
+use Duyler\DI\Storage\ProviderArgumentsStorage;
+use Duyler\DI\Storage\ProviderFactoryServiceStorage;
+use Duyler\DI\Storage\ProviderStorage;
+use Duyler\DI\Storage\ReflectionStorage;
+use Duyler\DI\Storage\ServiceStorage;
 use Override;
 use ReflectionClass;
 

@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Duyler\DependencyInjection;
+namespace Duyler\DI;
 
-use Duyler\DependencyInjection\Exception\CircularReferenceException;
-use Duyler\DependencyInjection\Exception\InterfaceMapNotFoundException;
-use Duyler\DependencyInjection\Provider\ProviderInterface;
-use Duyler\DependencyInjection\Storage\ProviderArgumentsStorage;
-use Duyler\DependencyInjection\Storage\ProviderFactoryServiceStorage;
-use Duyler\DependencyInjection\Storage\ProviderStorage;
-use Duyler\DependencyInjection\Storage\ReflectionStorage;
-use Duyler\DependencyInjection\Storage\ServiceStorage;
+use Duyler\DI\Exception\CircularReferenceException;
+use Duyler\DI\Exception\InterfaceMapNotFoundException;
+use Duyler\DI\Provider\ProviderInterface;
+use Duyler\DI\Storage\ProviderArgumentsStorage;
+use Duyler\DI\Storage\ProviderFactoryServiceStorage;
+use Duyler\DI\Storage\ProviderStorage;
+use Duyler\DI\Storage\ReflectionStorage;
+use Duyler\DI\Storage\ServiceStorage;
 use ReflectionClass;
 use ReflectionMethod;
 

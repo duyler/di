@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Duyler\DependencyInjection\Test\Functional;
+namespace Duyler\DI\Test\Functional;
 
-use Duyler\DependencyInjection\Attribute\Finalize;
-use Duyler\DependencyInjection\Container;
-use Duyler\DependencyInjection\Exception\FinalizeNotImplementException;
+use Duyler\DI\Attribute\Finalize;
+use Duyler\DI\Container;
+use Duyler\DI\Exception\FinalizeNotImplementException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
