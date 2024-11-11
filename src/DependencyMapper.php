@@ -157,6 +157,16 @@ class DependencyMapper
             $this->classMap[$depInterfaceName] ??= $provider->bind()[$depInterfaceName] ?? null;
         }
 
+        if ($this->providerStorage->has($depInterfaceName)) {
+            $provider = $this->providerStorage->get($depInterfaceName);
+            $service = $provider->factory($this->containerService);
+
+            if (null !== $service) {
+                $this->argumentsStorage->set($className, [$depArgName => $service]);
+                return;
+            }
+        }
+
         if (!isset($this->classMap[$depInterfaceName])) {
             throw new InterfaceMapNotFoundException($depInterfaceName, $className);
         }
