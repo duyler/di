@@ -15,7 +15,8 @@ class ProviderArgumentsStorage
 
     public function set(string $className, array $arguments): void
     {
-        $this->arguments[$className] = $arguments;
+        $existsArguments = $this->arguments[$className] ?? [];
+        $this->arguments[$className] = $arguments + $existsArguments;
     }
 
     public function reset(): void
