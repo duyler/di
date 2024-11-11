@@ -89,6 +89,16 @@ class Container implements ContainerInterface
     private function make(string $className): object
     {
         if (interface_exists($className)) {
+            if ($this->providerStorage->has($className)) {
+                $provider = $this->providerStorage->get($className);
+                $service = $provider->factory(new ContainerService($this));
+
+                if (null !== $service) {
+                    if ($service instanceof $className) {
+                        return $service;
+                    }
+                }
+            }
             $className = $this->dependencyMapper->getBind($className);
         }
 
