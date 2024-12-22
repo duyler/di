@@ -20,6 +20,12 @@ class DependencyMapper
     private array $classMap = [];
     private array $dependencies = [];
 
+    /** @var array<string, object> */
+    private array $mainServiceLog = [];
+
+    /** @var array<string, object> */
+    private array $repeatedServiceLog = [];
+
     public function __construct(
         private readonly ReflectionStorage $reflectionStorage,
         private readonly ServiceStorage $serviceStorage,
@@ -55,6 +61,8 @@ class DependencyMapper
     public function resolve(string $className): array
     {
         $this->dependencies = [];
+        $this->repeatedServiceLog = [];
+        $this->mainServiceLog = [];
         $this->prepareDependencies($className);
 
         return $this->dependencies;
@@ -176,16 +184,28 @@ class DependencyMapper
         $this->resolveDependency($className, $depClassName, $depArgName);
     }
 
+    private function resolveDependency(string $className, string $depClassName, string $depArgName): void
+    {
+        $this->resolveCycleDependencies($className, $depClassName);
+        $this->prepareDependencies($depClassName);
+        $this->dependencies[$className][$depArgName] = $depClassName;
+    }
+
     /**
      * @throws CircularReferenceException
      */
-    private function resolveDependency(string $className, string $depClassName, string $depArgName): void
+    private function resolveCycleDependencies(string $className, string $depClassName): void
     {
-        if (isset($this->dependencies[$depClassName][$className])) {
-            throw new CircularReferenceException($className, $depClassName);
+        if (in_array($depClassName, $this->mainServiceLog)) {
+            $this->repeatedServiceLog[$depClassName] = $depClassName;
+        } else {
+            $this->mainServiceLog[$depClassName] = $depClassName;
         }
 
-        $this->prepareDependencies($depClassName);
-        $this->dependencies[$className][$depArgName] = $depClassName;
+        if (count($this->repeatedServiceLog) === count($this->mainServiceLog)) {
+            if ([] === array_diff($this->mainServiceLog, $this->repeatedServiceLog)) {
+                throw new CircularReferenceException($className, $depClassName);
+            }
+        }
     }
 }
