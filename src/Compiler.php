@@ -52,7 +52,7 @@ class Compiler
         $this->iterateDependenciesTree();
     }
 
-    public function setDefinitions(string $className, $definition): void
+    public function setDefinitions(string $className, object $definition): void
     {
         if (false === $this->serviceStorage->has($className)) {
             $this->serviceStorage->set($className, $definition);
