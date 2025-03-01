@@ -7,9 +7,9 @@ use Psr\Container\ContainerExceptionInterface;
 
 class InterfaceMapNotFoundException extends Exception implements ContainerExceptionInterface
 {
-    public function __construct(string $interfaceName, ?string $className = null)
+    public function __construct(string $interfaceName, string $className)
     {
-        $message = 'Interface map not found for ' . $interfaceName . ' in ' . $className ?? 'required interface';
+        $message = 'Interface map not found for ' . $interfaceName . ' in ' . $className;
 
         parent::__construct($message);
     }

@@ -6,8 +6,9 @@ namespace Duyler\DI\Storage;
 
 use Duyler\DI\Provider\ProviderInterface;
 
-class ProviderStorage
+final class ProviderStorage
 {
+    /** @var array<string, ProviderInterface> */
     private array $providers = [];
 
     public function add(string $id, ProviderInterface $provider): void

@@ -16,13 +16,15 @@ use function end;
 use function key;
 use function prev;
 
-class Compiler
+final class Injector
 {
-    protected array $definitions = [];
+    private array $definitions = [];
 
     /** @var Definition[] */
-    protected array $externalDefinitions = [];
-    protected array $dependenciesTree = [];
+    private array $externalDefinitions = [];
+
+    /** @var array<string, array<string, string>> */
+    private array $dependenciesTree = [];
 
     public function __construct(
         private readonly ServiceStorage $serviceStorage,
@@ -37,9 +39,10 @@ class Compiler
     }
 
     /**
+     * @param array<string, array<string, string>> $dependenciesTree
      * @throws ResolveDependenciesTreeException
      */
-    public function compile(string $className, array $dependenciesTree = []): void
+    public function build(string $className, array $dependenciesTree = []): void
     {
         $this->dependenciesTree = $dependenciesTree;
 
@@ -52,19 +55,19 @@ class Compiler
         $this->iterateDependenciesTree();
     }
 
-    public function setDefinitions(string $className, object $definition): void
+    private function setDefinitions(string $className, object $definition): void
     {
         if (false === $this->serviceStorage->has($className)) {
             $this->serviceStorage->set($className, $definition);
         }
     }
 
-    public function getDefinitions(string $className): object
+    private function getDefinitions(string $className): object
     {
         return $this->serviceStorage->get($className);
     }
 
-    public function hasDefinition(string $className): bool
+    private function hasDefinition(string $className): bool
     {
         return $this->serviceStorage->has($className);
     }
@@ -77,6 +80,7 @@ class Compiler
         $deps = end($this->dependenciesTree);
 
         while (false !== $deps) {
+            /** @var string $class */
             $class = key($this->dependenciesTree);
 
             $deps = current($this->dependenciesTree);
@@ -90,7 +94,7 @@ class Compiler
     }
 
     /**
-     * @throws ResolveDependenciesTreeException
+     * @param array<string, string> $deps
      */
     private function instanceClass(string $className, array $deps = []): void
     {
@@ -113,6 +117,7 @@ class Compiler
 
     /**
      * @throws ResolveDependenciesTreeException
+     * @psalm-suppress InvalidStringClass
      */
     private function prepareDependencies(string $className, array $dependencies = []): void
     {

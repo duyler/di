@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Duyler\DI;
 
 use Duyler\DI\Exception\CircularReferenceException;
+use Duyler\DI\Exception\InterfaceBindNotFoundException;
 use Duyler\DI\Exception\InterfaceMapNotFoundException;
 use Duyler\DI\Provider\ProviderInterface;
 use Duyler\DI\Storage\ProviderArgumentsStorage;
@@ -15,15 +16,18 @@ use Duyler\DI\Storage\ServiceStorage;
 use ReflectionClass;
 use ReflectionMethod;
 
-class DependencyMapper
+final class DependencyMapper
 {
+    /** @var array<string, string> */
     private array $classMap = [];
+
+    /** @var array<string, array<string, string>> */
     private array $dependencies = [];
 
-    /** @var array<string, object> */
+    /** @var array<string, string> */
     private array $mainServiceLog = [];
 
-    /** @var array<string, object> */
+    /** @var array<string, string> */
     private array $repeatedServiceLog = [];
 
     public function __construct(
@@ -45,6 +49,9 @@ class DependencyMapper
         return $this->classMap;
     }
 
+    /**
+     * @throws InterfaceBindNotFoundException
+     */
     public function getBind(string $interface): string
     {
         if ($this->providerStorage->has($interface)) {
@@ -55,7 +62,7 @@ class DependencyMapper
             }
         }
 
-        return $this->classMap[$interface] ?? throw new InterfaceMapNotFoundException($interface);
+        return $this->classMap[$interface] ?? throw new InterfaceBindNotFoundException($interface);
     }
 
     public function resolve(string $className): array
@@ -98,6 +105,9 @@ class DependencyMapper
         }
     }
 
+    /**
+     * @psalm-suppress ArgumentTypeCoercion
+     */
     private function buildDependencies(ReflectionMethod $constructor, string $className): void
     {
         foreach ($constructor->getParameters() as $param) {
@@ -107,7 +117,7 @@ class DependencyMapper
                 continue;
             }
 
-            $paramClassName = $type->getName();
+            $paramClassName = (string) $type->getName();
 
             if (false === class_exists($paramClassName)
                 && false === interface_exists($paramClassName)
@@ -179,6 +189,7 @@ class DependencyMapper
             throw new InterfaceMapNotFoundException($depInterfaceName, $className);
         }
 
+        /** @var string $depClassName */
         $depClassName = $this->classMap[$depInterfaceName];
 
         $this->resolveDependency($className, $depClassName, $depArgName);

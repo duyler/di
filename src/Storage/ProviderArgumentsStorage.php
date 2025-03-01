@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Duyler\DI\Storage;
 
-class ProviderArgumentsStorage
+final class ProviderArgumentsStorage
 {
+    /** @var array<string, array>  */
     private array $arguments = [];
 
     public function get(string $className): array
