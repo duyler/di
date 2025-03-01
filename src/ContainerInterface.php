@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Duyler\DI;
 
+use Override;
 use Psr\Container\ContainerInterface as PsrContainerInterface;
 
 interface ContainerInterface extends PsrContainerInterface
 {
+    #[Override]
     public function get(string $id): object;
 
     /**

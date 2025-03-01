@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Duyler\DI\Storage;
 
-class ServiceStorage
+final class ServiceStorage
 {
+    /** @var array<string, object> */
     private array $services = [];
 
     public function set(string $className, object $definition): void

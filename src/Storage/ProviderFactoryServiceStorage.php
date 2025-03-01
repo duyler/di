@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Duyler\DI\Storage;
 
-class ProviderFactoryServiceStorage
+final class ProviderFactoryServiceStorage
 {
+    /** @var array<string, object> */
     private array $services = [];
 
     public function add(string $class, object $service): void
@@ -21,11 +22,6 @@ class ProviderFactoryServiceStorage
     public function get(string $class): object
     {
         return $this->services[$class];
-    }
-
-    public function getAll(): array
-    {
-        return $this->services;
     }
 
     public function reset(): void

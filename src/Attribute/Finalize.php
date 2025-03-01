@@ -7,7 +7,7 @@ namespace Duyler\DI\Attribute;
 use Attribute;
 
 #[Attribute]
-class Finalize
+final class Finalize
 {
     public function __construct(public string $method = 'finalize') {}
 }

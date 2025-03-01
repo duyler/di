@@ -7,7 +7,7 @@ use Psr\Container\NotFoundExceptionInterface;
 
 class NotFoundException extends Exception implements NotFoundExceptionInterface
 {
-    public function __construct($className)
+    public function __construct(string $className)
     {
         $message = 'Instance of ' . $className . ' not found.';
 

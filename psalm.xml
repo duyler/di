@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<psalm
+    errorLevel="1"
+    resolveFromConfigFile="true"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://getpsalm.org/schema/config"
+    xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
+    findUnusedCode="false"
+>
+    <projectFiles>
+        <directory name="src" />
+    </projectFiles>
+<!--    For step-by-step refactoring-->
+    <issueHandlers>
+        <ClassMustBeFinal errorLevel="suppress" />
+        <PossiblyFalseArgument errorLevel="suppress" />
+        <InvalidPropertyAssignmentValue errorLevel="suppress" />
+        <UndefinedMethod errorLevel="suppress" />
+        <ArgumentTypeCoercion errorLevel="suppress" />
+        <TooFewArguments errorLevel="suppress" />
+        <MixedPropertyTypeCoercion errorLevel="suppress" />
+        <MixedFunctionCall errorLevel="suppress" />
+        <MixedArgument errorLevel="suppress" />
+        <MixedAssignment errorLevel="suppress" />
+        <MixedArgumentTypeCoercion errorLevel="suppress" />
+        <MixedReturnTypeCoercion errorLevel="suppress" />
+    </issueHandlers>
+</psalm>

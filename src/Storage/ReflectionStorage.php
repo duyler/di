@@ -6,7 +6,7 @@ namespace Duyler\DI\Storage;
 
 use ReflectionClass;
 
-class ReflectionStorage
+final class ReflectionStorage
 {
     /**
      * @var ReflectionClass[]
@@ -26,10 +26,5 @@ class ReflectionStorage
     public function has(string $reflectionClassName): bool
     {
         return isset($this->reflections[$reflectionClassName]);
-    }
-
-    public function getAll(): array
-    {
-        return $this->reflections;
     }
 }

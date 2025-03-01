@@ -10,6 +10,7 @@ interface ProviderInterface
 {
     public function getArguments(ContainerService $containerService): array;
 
+    /** @return array<string, string> */
     public function bind(): array;
 
     public function accept(object $definition): void;

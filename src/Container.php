@@ -17,9 +17,9 @@ use ReflectionClass;
 
 use function interface_exists;
 
-class Container implements ContainerInterface
+final class Container implements ContainerInterface
 {
-    private readonly Compiler $compiler;
+    private readonly Injector $injector;
     private readonly DependencyMapper $dependencyMapper;
     private readonly ServiceStorage $serviceStorage;
     private readonly ProviderStorage $providerStorage;
@@ -38,7 +38,7 @@ class Container implements ContainerInterface
         $this->argumentsStorage = new ProviderArgumentsStorage();
         $this->providerFactoryServiceStorage = new ProviderFactoryServiceStorage();
 
-        $this->compiler = new Compiler(
+        $this->injector = new Injector(
             serviceStorage: $this->serviceStorage,
             providerStorage: $this->providerStorage,
             argumentsStorage: $this->argumentsStorage,
@@ -145,17 +145,17 @@ class Container implements ContainerInterface
     #[Override]
     public function addDefinition(Definition $definition): self
     {
-        $this->compiler->addDefinition($definition);
+        $this->injector->addDefinition($definition);
 
         return $this;
     }
 
-    protected function makeRequiredObject(string $className): object
+    private function makeRequiredObject(string $className): object
     {
         if (!isset($this->dependenciesTree[$className])) {
             $this->dependenciesTree[$className] = $this->dependencyMapper->resolve($className);
         }
-        $this->compiler->compile($className, $this->dependenciesTree[$className]);
+        $this->injector->build($className, $this->dependenciesTree[$className]);
 
         return $this->get($className);
     }

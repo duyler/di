@@ -15,15 +15,18 @@ use Duyler\DI\Storage\ServiceStorage;
 use ReflectionClass;
 use ReflectionMethod;
 
-class DependencyMapper
+final class DependencyMapper
 {
+    /** @var array<string, string> */
     private array $classMap = [];
+
+    /** @var array<string, array<string, string>> */
     private array $dependencies = [];
 
-    /** @var array<string, object> */
+    /** @var array<string, string> */
     private array $mainServiceLog = [];
 
-    /** @var array<string, object> */
+    /** @var array<string, string> */
     private array $repeatedServiceLog = [];
 
     public function __construct(
@@ -98,6 +101,9 @@ class DependencyMapper
         }
     }
 
+    /**
+     * @psalm-suppress ArgumentTypeCoercion
+     */
     private function buildDependencies(ReflectionMethod $constructor, string $className): void
     {
         foreach ($constructor->getParameters() as $param) {
@@ -107,7 +113,7 @@ class DependencyMapper
                 continue;
             }
 
-            $paramClassName = $type->getName();
+            $paramClassName = (string)$type->getName();
 
             if (false === class_exists($paramClassName)
                 && false === interface_exists($paramClassName)
@@ -179,6 +185,7 @@ class DependencyMapper
             throw new InterfaceMapNotFoundException($depInterfaceName, $className);
         }
 
+        /** @var string $depClassName */
         $depClassName = $this->classMap[$depInterfaceName];
 
         $this->resolveDependency($className, $depClassName, $depArgName);
