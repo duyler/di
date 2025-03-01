@@ -24,6 +24,7 @@ final class ServiceStorage
         return isset($this->services[$className]);
     }
 
+    /** @return  array<string, object> */
     public function getAll(): array
     {
         return $this->services;

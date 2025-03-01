@@ -10,19 +10,8 @@
     <projectFiles>
         <directory name="src" />
     </projectFiles>
-<!--    For step-by-step refactoring-->
     <issueHandlers>
-        <ClassMustBeFinal errorLevel="suppress" />
-        <PossiblyFalseArgument errorLevel="suppress" />
         <InvalidPropertyAssignmentValue errorLevel="suppress" />
-        <UndefinedMethod errorLevel="suppress" />
-        <ArgumentTypeCoercion errorLevel="suppress" />
-        <TooFewArguments errorLevel="suppress" />
-        <MixedPropertyTypeCoercion errorLevel="suppress" />
-        <MixedFunctionCall errorLevel="suppress" />
-        <MixedArgument errorLevel="suppress" />
-        <MixedAssignment errorLevel="suppress" />
-        <MixedArgumentTypeCoercion errorLevel="suppress" />
-        <MixedReturnTypeCoercion errorLevel="suppress" />
+        <ClassMustBeFinal errorLevel="suppress" />
     </issueHandlers>
 </psalm>

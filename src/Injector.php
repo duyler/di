@@ -83,6 +83,7 @@ final class Injector
             /** @var string $class */
             $class = key($this->dependenciesTree);
 
+            /** @var array<string, string> $deps */
             $deps = current($this->dependenciesTree);
 
             $this->instanceClass($class, $deps);

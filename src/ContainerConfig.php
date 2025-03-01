@@ -38,16 +38,25 @@ class ContainerConfig
         return $this;
     }
 
+    /**
+     * @return array<string, string>
+     */
     public function getClassMap(): array
     {
         return $this->classMap;
     }
 
+    /**
+     * @return array<string, string>
+     */
     public function getProviders(): array
     {
         return $this->providers;
     }
 
+    /**
+     * @return array<array-key, Definition>
+     */
     public function getDefinitions(): array
     {
         return $this->definitions;

@@ -32,7 +32,7 @@ interface ContainerInterface extends PsrContainerInterface
     public function addDefinition(Definition $definition): self;
 
     /**
-     * @return array<array-key, array<string, array<string, string>>>
+     * @return array<string, array<string, array<string, string>>>
      */
     public function getDependencyTree(): array;
 

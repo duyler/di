@@ -26,7 +26,11 @@ class Container implements ContainerInterface
     private readonly ReflectionStorage $reflectionStorage;
     private readonly ProviderArgumentsStorage $argumentsStorage;
     private readonly ProviderFactoryServiceStorage $providerFactoryServiceStorage;
+
+    /** @var array<string, array<string, array<string, string>>> */
     private array $dependenciesTree = [];
+
+    /** @var array<string, callable>  */
     private array $finalizers = [];
 
     public function __construct(
@@ -155,7 +159,10 @@ class Container implements ContainerInterface
         if (!isset($this->dependenciesTree[$className])) {
             $this->dependenciesTree[$className] = $this->dependencyMapper->resolve($className);
         }
-        $this->injector->build($className, $this->dependenciesTree[$className]);
+
+        /** @var array<string, array<string, string>> $tree */
+        $tree = $this->dependenciesTree[$className];
+        $this->injector->build($className, $tree);
 
         return $this->get($className);
     }
@@ -182,6 +189,7 @@ class Container implements ContainerInterface
             if ($this->reflectionStorage->has($className)) {
                 $reflection = $this->reflectionStorage->get($className);
             } else {
+                /** @psalm-suppress ArgumentTypeCoercion */
                 $reflection = new ReflectionClass($className);
             }
 
