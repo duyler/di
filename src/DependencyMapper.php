@@ -113,7 +113,7 @@ final class DependencyMapper
                 continue;
             }
 
-            $paramClassName = (string)$type->getName();
+            $paramClassName = (string) $type->getName();
 
             if (false === class_exists($paramClassName)
                 && false === interface_exists($paramClassName)
