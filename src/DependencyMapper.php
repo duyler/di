@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Duyler\DI;
 
 use Duyler\DI\Exception\CircularReferenceException;
+use Duyler\DI\Exception\InterfaceBindNotFoundException;
 use Duyler\DI\Exception\InterfaceMapNotFoundException;
 use Duyler\DI\Provider\ProviderInterface;
 use Duyler\DI\Storage\ProviderArgumentsStorage;
@@ -48,6 +49,9 @@ final class DependencyMapper
         return $this->classMap;
     }
 
+    /**
+     * @throws InterfaceBindNotFoundException
+     */
     public function getBind(string $interface): string
     {
         if ($this->providerStorage->has($interface)) {
@@ -58,7 +62,7 @@ final class DependencyMapper
             }
         }
 
-        return $this->classMap[$interface] ?? throw new InterfaceMapNotFoundException($interface);
+        return $this->classMap[$interface] ?? throw new InterfaceBindNotFoundException($interface);
     }
 
     public function resolve(string $className): array
