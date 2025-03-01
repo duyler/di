@@ -39,11 +39,17 @@ final class DependencyMapper
         private readonly ProviderFactoryServiceStorage $providerFactoryServiceStorage,
     ) {}
 
+    /**
+     * @param array<string, string> $classMap
+     */
     public function bind(array $classMap): void
     {
         $this->classMap = $classMap + $this->classMap;
     }
 
+    /**
+     * @return array<string, string>
+     */
     public function getClassMap(): array
     {
         return $this->classMap;
@@ -65,6 +71,9 @@ final class DependencyMapper
         return $this->classMap[$interface] ?? throw new InterfaceBindNotFoundException($interface);
     }
 
+    /**
+     * @return array<string, string>
+     */
     public function resolve(string $className): array
     {
         $this->dependencies = [];
@@ -78,6 +87,7 @@ final class DependencyMapper
     private function prepareDependencies(string $className): void
     {
         if (false === $this->reflectionStorage->has($className)) {
+            /** @psalm-suppress ArgumentTypeCoercion */
             $this->reflectionStorage->set($className, new ReflectionClass($className));
         }
 
@@ -117,6 +127,7 @@ final class DependencyMapper
                 continue;
             }
 
+            /** @psalm-suppress UndefinedMethod */
             $paramClassName = (string) $type->getName();
 
             if (false === class_exists($paramClassName)
