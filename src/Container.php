@@ -17,7 +17,7 @@ use ReflectionClass;
 
 use function interface_exists;
 
-final class Container implements ContainerInterface
+class Container implements ContainerInterface
 {
     private readonly Injector $injector;
     private readonly DependencyMapper $dependencyMapper;
