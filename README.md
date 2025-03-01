@@ -1,4 +1,6 @@
 ![build](https://github.com/duyler/di/workflows/build/badge.svg)
+[![type-coverage](https://shepherd.dev/github/duyler/di/coverage.svg)](https://shepherd.dev/github/duyler/di)
+[![psalm-level](https://shepherd.dev/github/duyler/di/level.svg)](https://shepherd.dev/github/duyler/di)
 # The dependency injection container
 
 ### This package makes it possible to quickly connect the DI-container to your project.
