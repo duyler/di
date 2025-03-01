@@ -12,5 +12,6 @@
     </projectFiles>
     <issueHandlers>
         <InvalidPropertyAssignmentValue errorLevel="suppress" />
+        <ClassMustBeFinal errorLevel="suppress" />
     </issueHandlers>
 </psalm>
