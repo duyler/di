@@ -6,6 +6,7 @@ namespace Duyler\DI\Tests\Functional;
 
 use Duyler\DI\Container;
 use Duyler\DI\Definition;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 
@@ -18,7 +19,8 @@ class DefinitionTest extends TestCase
         $this->container = new Container();
     }
 
-    public function testSimpleDefinition(): void
+    #[Test]
+    public function simple_definition(): void
     {
         $definition = new Definition(
             SimpleService::class,
@@ -34,7 +36,8 @@ class DefinitionTest extends TestCase
         $this->assertEquals('test', $service->getValue());
     }
 
-    public function testDefinitionWithDependencies(): void
+    #[Test]
+    public function definition_with_dependencies(): void
     {
         $definition = new Definition(
             ServiceWithDependency::class,
@@ -50,7 +53,8 @@ class DefinitionTest extends TestCase
         $this->assertInstanceOf(stdClass::class, $service->getDependency());
     }
 
-    public function testDefinitionWithMultipleDependencies(): void
+    #[Test]
+    public function definition_with_multiple_dependencies(): void
     {
         $definition = new Definition(
             ServiceWithMultipleDependencies::class,
@@ -68,7 +72,8 @@ class DefinitionTest extends TestCase
         $this->assertInstanceOf(AnotherDependency::class, $service->getDependency2());
     }
 
-    public function testDefinitionWithInterfaceBinding(): void
+    #[Test]
+    public function definition_with_interface_binding(): void
     {
         $this->container->bind([
             TestDefinitionInterface::class => TestDefinitionImplementation::class,

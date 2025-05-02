@@ -9,6 +9,7 @@ use Duyler\DI\Container;
 use Duyler\DI\ContainerConfig;
 use Duyler\DI\ContainerService;
 use Duyler\DI\Provider\ProviderInterface;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class ProviderTest extends TestCase
@@ -20,7 +21,8 @@ class ProviderTest extends TestCase
         $this->container = new Container();
     }
 
-    public function testProviderRegistration(): void
+    #[Test]
+    public function provider_registration(): void
     {
         $config = new ContainerConfig();
         $config->withProvider([
@@ -34,7 +36,8 @@ class ProviderTest extends TestCase
         $this->assertEquals('test', $service->getValue());
     }
 
-    public function testProviderWithDependencies(): void
+    #[Test]
+    public function provider_with_dependencies(): void
     {
         $config = new ContainerConfig();
         $config->withProvider([
@@ -48,7 +51,8 @@ class ProviderTest extends TestCase
         $this->assertInstanceOf(TestProviderDependency::class, $service->getDependency());
     }
 
-    public function testProviderArguments(): void
+    #[Test]
+    public function provider_arguments(): void
     {
         $config = new ContainerConfig();
         $config->withProvider([
