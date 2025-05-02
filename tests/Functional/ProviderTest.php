@@ -2,86 +2,268 @@
 
 declare(strict_types=1);
 
-namespace Duyler\DI\Test\Functional;
+namespace Duyler\DI\Tests\Functional;
 
+use Duyler\DI\Attribute\Finalize;
 use Duyler\DI\Container;
-use Duyler\DI\Provider\AbstractProvider;
-use PHPUnit\Framework\Attributes\Test;
+use Duyler\DI\ContainerConfig;
+use Duyler\DI\ContainerService;
+use Duyler\DI\Provider\ProviderInterface;
 use PHPUnit\Framework\TestCase;
 
 class ProviderTest extends TestCase
 {
-    #[Test]
-    public function get_with_provider_call_accept(): void
+    private Container $container;
+
+    protected function setUp(): void
     {
-        $container = new Container();
-        $container->addProviders([MyClass::class => ProviderWithAccept::class]);
-        $definition = $container->get(MyClass::class);
-        $this->assertInstanceOf(MyClass::class, $definition);
-        $this->assertSame('test', $definition->getValue());
+        $this->container = new Container();
     }
 
-    #[Test]
-    public function get_by_interface_with_provider_call_accept(): void
+    public function testProviderRegistration(): void
     {
-        $container = new Container();
-        $container->addProviders([MyClassInterface::class => ProviderWithAccept::class]);
-        $definition = $container->get(MyClassInterface::class);
-        $this->assertInstanceOf(MyClass::class, $definition);
-        $this->assertSame('test', $definition->getValue());
+        $config = new ContainerConfig();
+        $config->withProvider([
+            TestProviderInterface::class => TestProvider::class,
+        ]);
+
+        $container = new Container($config);
+        $service = $container->get(TestProviderInterface::class);
+
+        $this->assertInstanceOf(TestProviderImplementation::class, $service);
+        $this->assertEquals('test', $service->getValue());
     }
 
-    #[Test]
-    public function get_with_dependency_with_provider_call_accept(): void
+    public function testProviderWithDependencies(): void
     {
-        $container = new Container();
-        $container->addProviders([MyClassInterface::class => ProviderWithAccept::class]);
-        $definition = $container->get(MyClassWithDependency::class);
-        $this->assertInstanceOf(MyClassWithDependency::class, $definition);
-        $this->assertInstanceOf(MyClassInterface::class, $definition->getDependency());
-        $this->assertInstanceOf(MyClass::class, $definition->getDependency());
+        $config = new ContainerConfig();
+        $config->withProvider([
+            ComplexServiceInterface::class => ComplexServiceProvider::class,
+        ]);
+
+        $container = new Container($config);
+        $service = $container->get(ComplexServiceInterface::class);
+
+        $this->assertInstanceOf(ComplexService::class, $service);
+        $this->assertInstanceOf(TestProviderDependency::class, $service->getDependency());
+    }
+
+    public function testProviderArguments(): void
+    {
+        $config = new ContainerConfig();
+        $config->withProvider([
+            ArgumentServiceInterface::class => ArgumentServiceProvider::class,
+        ]);
+
+        $container = new Container($config);
+        $service = $container->get(ArgumentServiceInterface::class);
+
+        $this->assertEquals(['dependency' => 'test'], $service->getArguments());
     }
 }
 
-class ProviderWithAccept extends AbstractProvider
+interface TestProviderInterface
 {
+    public function getValue(): string;
+}
+
+class TestProviderImplementation implements TestProviderInterface
+{
+    public function getValue(): string
+    {
+        return 'test';
+    }
+}
+
+class TestProvider implements ProviderInterface
+{
+    public function getArguments(ContainerService $containerService): array
+    {
+        return [];
+    }
+
     public function bind(): array
     {
-        return [MyClassInterface::class => MyClass::class];
+        return [
+            TestProviderInterface::class => TestProviderImplementation::class,
+        ];
     }
 
     public function accept(object $definition): void
     {
-        /* @var MyClass $definition */
-        $definition->setValue('test');
+    }
+
+    public function finalizer(): ?callable
+    {
+        return null;
+    }
+
+    public function factory(ContainerService $containerService): ?object
+    {
+        return new TestProviderImplementation();
     }
 }
 
-interface MyClassInterface {}
-
-class MyClass implements MyClassInterface
+interface ComplexServiceInterface
 {
-    private ?string $value = null;
-
-    public function getValue(): ?string
-    {
-        return $this->value;
-    }
-
-    public function setValue(string $value): void
-    {
-        $this->value = $value;
-    }
+    public function getDependency(): TestProviderDependency;
 }
 
-class MyClassWithDependency
+class ComplexService implements ComplexServiceInterface
 {
-    public function __construct(
-        private MyClassInterface $dependency,
-    ) {}
+    private TestProviderDependency $dependency;
 
-    public function getDependency(): MyClassInterface
+    public function __construct(TestProviderDependency $dependency)
+    {
+        $this->dependency = $dependency;
+    }
+
+    public function getDependency(): TestProviderDependency
     {
         return $this->dependency;
+    }
+}
+
+class ComplexServiceProvider implements ProviderInterface
+{
+    public function getArguments(ContainerService $containerService): array
+    {
+        return [
+            'dependency' => $containerService->getInstance(TestProviderDependency::class),
+        ];
+    }
+
+    public function bind(): array
+    {
+        return [
+            ComplexServiceInterface::class => ComplexService::class,
+        ];
+    }
+
+    public function accept(object $definition): void
+    {
+    }
+
+    public function finalizer(): ?callable
+    {
+        return null;
+    }
+
+    public function factory(ContainerService $containerService): ?object
+    {
+        return new ComplexService(
+            $containerService->getInstance(TestProviderDependency::class)
+        );
+    }
+}
+
+interface FinalizableInterface
+{
+    public function isFinalized(): bool;
+}
+
+#[Finalize]
+class FinalizableService implements FinalizableInterface
+{
+    private bool $finalized = false;
+
+    public function finalize(): void
+    {
+        $this->finalized = true;
+    }
+
+    public function isFinalized(): bool
+    {
+        return $this->finalized;
+    }
+}
+
+class FinalizableProvider implements ProviderInterface
+{
+    public function getArguments(ContainerService $containerService): array
+    {
+        return [];
+    }
+
+    public function bind(): array
+    {
+        return [
+            FinalizableInterface::class => FinalizableService::class,
+        ];
+    }
+
+    public function accept(object $definition): void
+    {
+    }
+
+    public function finalizer(): ?callable
+    {
+        return function (FinalizableService $service) {
+            $service->finalize();
+        };
+    }
+
+    public function factory(ContainerService $containerService): ?object
+    {
+        return new FinalizableService();
+    }
+}
+
+interface ArgumentServiceInterface
+{
+    public function getArguments(): array;
+}
+
+class ArgumentService implements ArgumentServiceInterface
+{
+    private array $arguments;
+
+    public function __construct(array $arguments)
+    {
+        $this->arguments = $arguments;
+    }
+
+    public function getArguments(): array
+    {
+        return $this->arguments;
+    }
+}
+
+class ArgumentServiceProvider implements ProviderInterface
+{
+    public function getArguments(ContainerService $containerService): array
+    {
+        return [
+            'dependency' => 'test',
+        ];
+    }
+
+    public function bind(): array
+    {
+        return [
+            ArgumentServiceInterface::class => ArgumentService::class,
+        ];
+    }
+
+    public function accept(object $definition): void
+    {
+    }
+
+    public function finalizer(): ?callable
+    {
+        return null;
+    }
+
+    public function factory(ContainerService $containerService): ?object
+    {
+        return new ArgumentService($this->getArguments($containerService));
+    }
+}
+
+class TestProviderDependency
+{
+    public function getValue(): string
+    {
+        return 'dependency';
     }
 }
