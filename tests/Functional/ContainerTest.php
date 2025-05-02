@@ -7,6 +7,7 @@ namespace Duyler\DI\Tests\Functional;
 use Duyler\DI\Container;
 use Duyler\DI\ContainerConfig;
 use Duyler\DI\Definition;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class ContainerTest extends TestCase
@@ -18,7 +19,8 @@ class ContainerTest extends TestCase
         $this->container = new Container();
     }
 
-    public function testSimpleServiceRegistration(): void
+    #[Test]
+    public function simple_service_registration(): void
     {
         $service = new class {
             public function getValue(): string
@@ -34,7 +36,8 @@ class ContainerTest extends TestCase
         $this->assertEquals('test', $retrievedService->getValue());
     }
 
-    public function testInterfaceBinding(): void
+    #[Test]
+    public function interface_binding(): void
     {
         $config = new ContainerConfig();
         $config->withBind([
@@ -47,7 +50,8 @@ class ContainerTest extends TestCase
         $this->assertInstanceOf(TestImplementation::class, $service);
     }
 
-    public function testServiceDefinition(): void
+    #[Test]
+    public function service_definition(): void
     {
         $definition = new Definition(
             TestService::class,
@@ -63,7 +67,8 @@ class ContainerTest extends TestCase
         $this->assertInstanceOf(TestDependency::class, $service->getDependency());
     }
 
-    public function testServiceFinalization(): void
+    #[Test]
+    public function service_finalization(): void
     {
         $service = new class {
             private bool $finalized = false;
@@ -90,7 +95,8 @@ class ContainerTest extends TestCase
         $this->assertTrue($retrievedService->isFinalized());
     }
 
-    public function testDependencyTree(): void
+    #[Test]
+    public function dependency_tree(): void
     {
         $config = new ContainerConfig();
         $config->withBind([
@@ -105,7 +111,8 @@ class ContainerTest extends TestCase
         $this->assertArrayHasKey(TestImplementation::class, $tree);
     }
 
-    public function testContainerReset(): void
+    #[Test]
+    public function container_reset(): void
     {
         $service = new class {
             public function getValue(): string
