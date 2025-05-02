@@ -53,7 +53,7 @@ class ContainerTest extends TestCase
             TestService::class,
             [
                 'dependency' => new TestDependency(),
-            ]
+            ],
         );
 
         $this->container->addDefinition($definition);
@@ -155,4 +155,4 @@ class TestService
     {
         return $this->dependency;
     }
-} 
+}

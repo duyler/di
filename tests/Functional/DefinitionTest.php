@@ -24,7 +24,7 @@ class DefinitionTest extends TestCase
             SimpleService::class,
             [
                 'value' => 'test',
-            ]
+            ],
         );
 
         $this->container->addDefinition($definition);
@@ -40,7 +40,7 @@ class DefinitionTest extends TestCase
             ServiceWithDependency::class,
             [
                 'dependency' => new stdClass(),
-            ]
+            ],
         );
 
         $this->container->addDefinition($definition);
@@ -57,7 +57,7 @@ class DefinitionTest extends TestCase
             [
                 'dependency1' => new TestDefinitionImplementation(),
                 'dependency2' => new AnotherDependency(),
-            ]
+            ],
         );
 
         $this->container->addDefinition($definition);
@@ -78,14 +78,14 @@ class DefinitionTest extends TestCase
             ServiceWithInterfaceDependency::class,
             [
                 'dependency' => new TestDefinitionImplementation(),
-            ]
+            ],
         );
 
         $this->container->addDefinition($definition);
         $service = $this->container->get(ServiceWithInterfaceDependency::class);
 
         $this->assertInstanceOf(ServiceWithInterfaceDependency::class, $service);
-        $this->assertInstanceOf(TestDefinitionImplementation ::class, $service->getDependency());
+        $this->assertInstanceOf(TestDefinitionImplementation::class, $service->getDependency());
     }
 }
 
@@ -166,4 +166,4 @@ class AnotherDependency
     {
         return 'another';
     }
-} 
+}

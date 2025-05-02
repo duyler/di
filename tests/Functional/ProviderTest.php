@@ -89,9 +89,7 @@ class TestProvider implements ProviderInterface
         ];
     }
 
-    public function accept(object $definition): void
-    {
-    }
+    public function accept(object $definition): void {}
 
     public function finalizer(): ?callable
     {
@@ -140,9 +138,7 @@ class ComplexServiceProvider implements ProviderInterface
         ];
     }
 
-    public function accept(object $definition): void
-    {
-    }
+    public function accept(object $definition): void {}
 
     public function finalizer(): ?callable
     {
@@ -152,7 +148,7 @@ class ComplexServiceProvider implements ProviderInterface
     public function factory(ContainerService $containerService): ?object
     {
         return new ComplexService(
-            $containerService->getInstance(TestProviderDependency::class)
+            $containerService->getInstance(TestProviderDependency::class),
         );
     }
 }
@@ -192,9 +188,7 @@ class FinalizableProvider implements ProviderInterface
         ];
     }
 
-    public function accept(object $definition): void
-    {
-    }
+    public function accept(object $definition): void {}
 
     public function finalizer(): ?callable
     {
@@ -245,9 +239,7 @@ class ArgumentServiceProvider implements ProviderInterface
         ];
     }
 
-    public function accept(object $definition): void
-    {
-    }
+    public function accept(object $definition): void {}
 
     public function finalizer(): ?callable
     {
