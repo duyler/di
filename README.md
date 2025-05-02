@@ -108,7 +108,8 @@ use Duyler\DI\Definition;
 $definition = new Definition(
     MyService::class,
     [
-        'dependency' => AnotherService::class,
+        'dependencyOne' => new AnotherService(),
+        'dependencyTwo' => 'Hello, World!',
     ]
 );
 
@@ -151,31 +152,6 @@ $container->reset();
 // Get the dependency tree for a specific class
 $tree = $container->getDependencyTree();
 ```
-
-## Best Practices
-
-1. **Use Providers for Complex Services**
-   - Providers are ideal for services that require complex initialization
-   - They allow for better separation of concerns
-   - They support finalization and argument injection
-
-2. **Interface Binding**
-   - Always bind implementations to interfaces
-   - This makes your code more flexible and testable
-   - Use the `bind()` method in providers or container configuration
-
-3. **Service Finalization**
-   - Use finalizers for services that need initialization after construction
-   - Finalizers can be added through attributes or container methods
-   - Always call `finalize()` after all services are registered
-
-4. **Type Safety**
-   - Always use strict types
-   - Leverage PHP's type system for better error detection
-   - Use proper type hints in method signatures
-
-## Advanced Usage
-
 
 ### Dependency Mapping
 
