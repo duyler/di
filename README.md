@@ -1,3 +1,5 @@
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=duyler_di&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=duyler_di)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=duyler_di&metric=coverage)](https://sonarcloud.io/summary/new_code?id=duyler_di)
 [![type-coverage](https://shepherd.dev/github/duyler/di/coverage.svg)](https://shepherd.dev/github/duyler/di)
 [![psalm-level](https://shepherd.dev/github/duyler/di/level.svg)](https://shepherd.dev/github/duyler/di)
 
@@ -67,7 +69,7 @@ class MyServiceProvider implements ProviderInterface
     public function getArguments(ContainerService $containerService): array
     {
         return [
-            'dependency' => $containerService->get(Dependency::class),
+            'dependency' => $containerService->getInstance(Dependency::class),
         ];
     }
 
@@ -94,7 +96,7 @@ class MyServiceProvider implements ProviderInterface
     public function factory(ContainerService $containerService): ?object
     {
         return new MyImplementation(
-            $containerService->get(Dependency::class)
+            $containerService->getInstance(Dependency::class)
         );
     }
 }
@@ -157,12 +159,11 @@ $tree = $container->getDependencyTree();
 
 ```php
 // Get current class mappings
+
+$container = new Container();
+$myObject = $container->get(MyClass::class);
 $classMap = $container->getClassMap();
 
-// Add new mappings
-$container->bind([
-    NewInterface::class => NewImplementation::class,
-]);
 ```
 
 ## Contributing
