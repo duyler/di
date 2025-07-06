@@ -4,17 +4,19 @@ declare(strict_types=1);
 
 namespace Duyler\DI;
 
+use function current;
+
 use Duyler\DI\Exception\ResolveDependenciesTreeException;
 use Duyler\DI\Storage\ProviderArgumentsStorage;
 use Duyler\DI\Storage\ProviderFactoryServiceStorage;
 use Duyler\DI\Storage\ProviderStorage;
 use Duyler\DI\Storage\ServiceStorage;
-use Throwable;
 
-use function current;
 use function end;
 use function key;
 use function prev;
+
+use Throwable;
 
 final class Injector
 {
