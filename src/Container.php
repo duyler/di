@@ -12,10 +12,11 @@ use Duyler\DI\Storage\ProviderFactoryServiceStorage;
 use Duyler\DI\Storage\ProviderStorage;
 use Duyler\DI\Storage\ReflectionStorage;
 use Duyler\DI\Storage\ServiceStorage;
-use Override;
-use ReflectionClass;
 
 use function interface_exists;
+
+use Override;
+use ReflectionClass;
 
 class Container implements ContainerInterface
 {
