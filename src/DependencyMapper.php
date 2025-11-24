@@ -15,6 +15,7 @@ use Duyler\DI\Storage\ProviderStorage;
 use Duyler\DI\Storage\ReflectionStorage;
 use Duyler\DI\Storage\ServiceStorage;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionMethod;
 
 final class DependencyMapper
@@ -44,6 +45,7 @@ final class DependencyMapper
     public function bind(array $classMap): void
     {
         foreach ($classMap as $interface => $implementation) {
+            /** @psalm-suppress ArgumentTypeCoercion */
             $this->validateBinding($interface, $implementation);
         }
 
@@ -225,28 +227,22 @@ final class DependencyMapper
     }
 
     /**
+     * @param class-string $interface
+     * @param class-string $implementation
      * @throws InvalidBindingException
      */
     private function validateBinding(string $interface, string $implementation): void
     {
-        if (!interface_exists($interface) && !class_exists($interface)) {
+        try {
+            $reflectionInterface = new ReflectionClass($interface);
+            $reflectionImplementation = new ReflectionClass($implementation);
+        } catch (ReflectionException $exception) {
             throw new InvalidBindingException(
                 $interface,
                 $implementation,
-                sprintf('Interface or class "%s" does not exist', $interface)
+                $exception->getMessage()
             );
         }
-
-        if (!class_exists($implementation)) {
-            throw new InvalidBindingException(
-                $interface,
-                $implementation,
-                sprintf('Implementation class "%s" does not exist', $implementation)
-            );
-        }
-
-        $reflectionInterface = new ReflectionClass($interface);
-        $reflectionImplementation = new ReflectionClass($implementation);
 
         if ($reflectionInterface->isInterface() && !$reflectionImplementation->implementsInterface($interface)) {
             throw new InvalidBindingException(

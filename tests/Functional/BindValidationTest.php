@@ -16,7 +16,7 @@ class BindValidationTest extends TestCase
     public function throws_exception_when_interface_does_not_exist(): void
     {
         $this->expectException(InvalidBindingException::class);
-        $this->expectExceptionMessage('Interface or class "NonExistentInterface" does not exist');
+        $this->expectExceptionMessage('Class "NonExistentInterface" does not exist');
 
         $config = new ContainerConfig();
         $config->withBind(['NonExistentInterface' => ValidImplementation::class]);
@@ -28,7 +28,7 @@ class BindValidationTest extends TestCase
     public function throws_exception_when_implementation_does_not_exist(): void
     {
         $this->expectException(InvalidBindingException::class);
-        $this->expectExceptionMessage('Implementation class "NonExistentImplementation" does not exist');
+        $this->expectExceptionMessage('Class "NonExistentImplementation" does not exist');
 
         $config = new ContainerConfig();
         $config->withBind([ValidInterface::class => 'NonExistentImplementation']);
