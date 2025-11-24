@@ -12,6 +12,9 @@ interface ContainerInterface extends PsrContainerInterface
     #[Override]
     public function get(string $id): mixed;
 
+    #[Override]
+    public function has(string $id): bool;
+
     /**
      * @param array<string, string> $classMap
      */
