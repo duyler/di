@@ -93,7 +93,7 @@ class Container implements ContainerInterface
             } catch (ContainerExceptionInterface $exception) {
                 throw $exception;
             } catch (Throwable $exception) {
-                throw new NotFoundException($id);
+                throw new NotFoundException($id, $this->getAvailableServices());
             }
         }
 
@@ -114,7 +114,7 @@ class Container implements ContainerInterface
         } catch (ContainerExceptionInterface $exception) {
             throw $exception;
         } catch (Throwable $exception) {
-            throw new NotFoundException($id);
+            throw new NotFoundException($id, $this->getAvailableServices());
         }
     }
 
@@ -337,5 +337,19 @@ class Container implements ContainerInterface
         }
 
         return $errors;
+    }
+
+    /**
+     * @return array<string>
+     */
+    private function getAvailableServices(): array
+    {
+        $services = [];
+
+        $services = array_merge($services, array_keys($this->serviceStorage->getAll()));
+        $services = array_merge($services, array_keys($this->dependencyMapper->getClassMap()));
+        $services = array_merge($services, array_keys($this->providerStorage->getAll()));
+
+        return array_unique($services);
     }
 }

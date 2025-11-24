@@ -25,4 +25,12 @@ final class ProviderStorage
     {
         return isset($this->providers[$id]);
     }
+
+    /**
+     * @return array<string, ProviderInterface>
+     */
+    public function getAll(): array
+    {
+        return $this->providers;
+    }
 }
