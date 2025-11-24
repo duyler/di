@@ -9,4 +9,3 @@ enum Scope
     case Singleton;
     case Transient;
 }
-

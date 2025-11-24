@@ -119,4 +119,3 @@ class CompileCircularImplB implements CompileCircularB
 {
     public function __construct(CompileCircularA $a) {}
 }
-

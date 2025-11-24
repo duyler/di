@@ -126,7 +126,7 @@ class FactoryServiceWithDependency
 {
     public function __construct(
         private SimpleDependency $dependency,
-        private string $config
+        private string $config,
     ) {}
 
     public function getDependency(): SimpleDependency
@@ -159,4 +159,3 @@ class AnotherFactoryService
         return $this->value;
     }
 }
-

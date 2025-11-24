@@ -18,7 +18,6 @@ use Duyler\DI\Storage\ServiceStorage;
 
 use function interface_exists;
 
-use Duyler\DI\Scope;
 use Override;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionClass;
@@ -332,7 +331,7 @@ class Container implements ContainerInterface
                     'Failed to resolve "%s" bound to "%s": %s',
                     $interface,
                     $implementation,
-                    $exception->getMessage()
+                    $exception->getMessage(),
                 );
             }
         }

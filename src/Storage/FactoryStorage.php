@@ -29,4 +29,3 @@ final class FactoryStorage
         $this->factories = [];
     }
 }
-

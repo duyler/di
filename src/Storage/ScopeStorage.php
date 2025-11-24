@@ -26,4 +26,3 @@ final class ScopeStorage
         return isset($this->scopes[$className]);
     }
 }
-

@@ -6,7 +6,6 @@ namespace Duyler\DI\Tests\Functional;
 
 use Duyler\DI\Container;
 use Duyler\DI\ContainerConfig;
-use Duyler\DI\Exception\InvalidBindingException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -50,7 +49,7 @@ class BindValidationTest extends TestCase
         $this->assertNotEmpty($errors);
         $this->assertStringContainsString(
             sprintf('Class "%s" does not implement interface "%s"', InvalidImplementation::class, ValidInterface::class),
-            $errors[0]
+            $errors[0],
         );
     }
 
@@ -66,7 +65,7 @@ class BindValidationTest extends TestCase
         $this->assertNotEmpty($errors);
         $this->assertStringContainsString(
             sprintf('"%s" must be an interface or abstract class', ValidImplementation::class),
-            $errors[0]
+            $errors[0],
         );
     }
 
@@ -107,7 +106,7 @@ class BindValidationTest extends TestCase
         $this->assertNotEmpty($errors);
         $this->assertStringContainsString(
             sprintf('Class "%s" does not extend abstract class "%s"', ValidImplementation::class, AbstractClass::class),
-            $errors[0]
+            $errors[0],
         );
     }
 }
@@ -126,4 +125,3 @@ class ServiceWithAbstractDependency
 {
     public function __construct(public AbstractClass $dependency) {}
 }
-

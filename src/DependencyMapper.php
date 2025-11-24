@@ -253,7 +253,7 @@ final class DependencyMapper
             throw new InvalidBindingException(
                 $interface,
                 $implementation,
-                $exception->getMessage()
+                $exception->getMessage(),
             );
         }
 
@@ -261,7 +261,7 @@ final class DependencyMapper
             throw new InvalidBindingException(
                 $interface,
                 $implementation,
-                sprintf('Class "%s" does not implement interface "%s"', $implementation, $interface)
+                sprintf('Class "%s" does not implement interface "%s"', $implementation, $interface),
             );
         }
 
@@ -269,7 +269,7 @@ final class DependencyMapper
             throw new InvalidBindingException(
                 $interface,
                 $implementation,
-                sprintf('Class "%s" does not extend abstract class "%s"', $implementation, $interface)
+                sprintf('Class "%s" does not extend abstract class "%s"', $implementation, $interface),
             );
         }
 
@@ -277,7 +277,7 @@ final class DependencyMapper
             throw new InvalidBindingException(
                 $interface,
                 $implementation,
-                sprintf('"%s" must be an interface or abstract class', $interface)
+                sprintf('"%s" must be an interface or abstract class', $interface),
             );
         }
     }

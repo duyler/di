@@ -16,9 +16,8 @@ class InvalidBindingException extends Exception implements ContainerExceptionInt
                 'Invalid binding: "%s" => "%s". %s',
                 $interface,
                 $implementation,
-                $reason
-            )
+                $reason,
+            ),
         );
     }
 }
-
