@@ -15,6 +15,9 @@ class ContainerConfig
     /** @var Definition[] */
     private array $definitions = [];
 
+    /** @var array<string, Scope> */
+    private array $scopes = [];
+
     /** @param array<string, string> $bind */
     public function withBind(array $bind): ContainerConfig
     {
@@ -34,6 +37,13 @@ class ContainerConfig
     public function withDefinition(Definition $definition): ContainerConfig
     {
         $this->definitions[] = $definition;
+
+        return $this;
+    }
+
+    public function withScope(string $className, Scope $scope): ContainerConfig
+    {
+        $this->scopes[$className] = $scope;
 
         return $this;
     }
@@ -60,5 +70,13 @@ class ContainerConfig
     public function getDefinitions(): array
     {
         return $this->definitions;
+    }
+
+    /**
+     * @return array<string, Scope>
+     */
+    public function getScopes(): array
+    {
+        return $this->scopes;
     }
 }

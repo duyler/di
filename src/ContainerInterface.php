@@ -12,6 +12,9 @@ interface ContainerInterface extends PsrContainerInterface
     #[Override]
     public function get(string $id): mixed;
 
+    #[Override]
+    public function has(string $id): bool;
+
     /**
      * @param array<string, string> $classMap
      */
@@ -41,4 +44,11 @@ interface ContainerInterface extends PsrContainerInterface
     public function finalize(): self;
 
     public function addFinalizer(string $class, callable $finalizer): self;
+
+    public function factory(string $className, callable $factory): self;
+
+    /**
+     * @return array<string>
+     */
+    public function compile(): array;
 }
