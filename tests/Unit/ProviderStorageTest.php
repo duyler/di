@@ -53,4 +53,31 @@ class ProviderStorageTest extends TestCase
 
         $this->assertSame($provider2, $this->storage->get('test'));
     }
+
+    #[Test]
+    public function get_all_returns_all_providers(): void
+    {
+        $provider1 = $this->createMock(ProviderInterface::class);
+        $provider2 = $this->createMock(ProviderInterface::class);
+        $provider3 = $this->createMock(ProviderInterface::class);
+
+        $this->storage->add('provider1', $provider1);
+        $this->storage->add('provider2', $provider2);
+        $this->storage->add('provider3', $provider3);
+
+        $all = $this->storage->getAll();
+
+        $this->assertCount(3, $all);
+        $this->assertSame($provider1, $all['provider1']);
+        $this->assertSame($provider2, $all['provider2']);
+        $this->assertSame($provider3, $all['provider3']);
+    }
+
+    #[Test]
+    public function get_all_returns_empty_array_when_no_providers(): void
+    {
+        $all = $this->storage->getAll();
+
+        $this->assertEmpty($all);
+    }
 }
