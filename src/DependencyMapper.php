@@ -24,11 +24,8 @@ final class DependencyMapper
     /** @var array<string, array<string, string>> */
     private array $dependencies = [];
 
-    /** @var array<string, string> */
-    private array $mainServiceLog = [];
-
-    /** @var array<string, string> */
-    private array $repeatedServiceLog = [];
+    /** @var array<string, bool> */
+    private array $resolutionStack = [];
 
     public function __construct(
         private readonly ReflectionStorage $reflectionStorage,
@@ -77,8 +74,7 @@ final class DependencyMapper
     public function resolve(string $className): array
     {
         $this->dependencies = [];
-        $this->repeatedServiceLog = [];
-        $this->mainServiceLog = [];
+        $this->resolutionStack = [];
         $this->prepareDependencies($className);
 
         return $this->dependencies;
@@ -86,32 +82,42 @@ final class DependencyMapper
 
     private function prepareDependencies(string $className): void
     {
-        if (false === $this->reflectionStorage->has($className)) {
-            /** @psalm-suppress ArgumentTypeCoercion */
-            $this->reflectionStorage->set($className, new ReflectionClass($className));
+        if (isset($this->resolutionStack[$className])) {
+            throw new CircularReferenceException($className, $className);
         }
 
-        $constructor = $this->reflectionStorage->get($className)->getConstructor();
+        $this->resolutionStack[$className] = true;
 
-        if (null !== $constructor && false === $this->serviceStorage->has($className)) {
-            if ($this->providerStorage->has($className)) {
-                $provider = $this->providerStorage->get($className);
-                $arguments = $this->prepareProviderArguments($provider, $className);
-
-                $service = $provider->factory($this->containerService);
-
-                if (null !== $service) {
-                    $this->dependencies[$className] = [];
-                    $this->providerFactoryServiceStorage->add($className, $service);
-                    return;
-                }
-
-                if (count($constructor->getParameters()) === count($arguments)) {
-                    $this->dependencies[$className] = [];
-                    return;
-                }
+        try {
+            if (false === $this->reflectionStorage->has($className)) {
+                /** @psalm-suppress ArgumentTypeCoercion */
+                $this->reflectionStorage->set($className, new ReflectionClass($className));
             }
-            $this->buildDependencies($constructor, $className);
+
+            $constructor = $this->reflectionStorage->get($className)->getConstructor();
+
+            if (null !== $constructor && false === $this->serviceStorage->has($className)) {
+                if ($this->providerStorage->has($className)) {
+                    $provider = $this->providerStorage->get($className);
+                    $arguments = $this->prepareProviderArguments($provider, $className);
+
+                    $service = $provider->factory($this->containerService);
+
+                    if (null !== $service) {
+                        $this->dependencies[$className] = [];
+                        $this->providerFactoryServiceStorage->add($className, $service);
+                        return;
+                    }
+
+                    if (count($constructor->getParameters()) === count($arguments)) {
+                        $this->dependencies[$className] = [];
+                        return;
+                    }
+                }
+                $this->buildDependencies($constructor, $className);
+            }
+        } finally {
+            unset($this->resolutionStack[$className]);
         }
     }
 
@@ -208,26 +214,7 @@ final class DependencyMapper
 
     private function resolveDependency(string $className, string $depClassName, string $depArgName): void
     {
-        $this->resolveCycleDependencies($className, $depClassName);
         $this->prepareDependencies($depClassName);
         $this->dependencies[$className][$depArgName] = $depClassName;
-    }
-
-    /**
-     * @throws CircularReferenceException
-     */
-    private function resolveCycleDependencies(string $className, string $depClassName): void
-    {
-        if (in_array($depClassName, $this->mainServiceLog)) {
-            $this->repeatedServiceLog[$depClassName] = $depClassName;
-        } else {
-            $this->mainServiceLog[$depClassName] = $depClassName;
-        }
-
-        if (count($this->repeatedServiceLog) === count($this->mainServiceLog)) {
-            if ([] === array_diff($this->mainServiceLog, $this->repeatedServiceLog)) {
-                throw new CircularReferenceException($className, $depClassName);
-            }
-        }
     }
 }

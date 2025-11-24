@@ -12,6 +12,7 @@ class ContainerService
 
     public function getInstance(string $class): object
     {
+        /** @var object */
         return $this->container->get($class);
     }
 }

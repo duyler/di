@@ -5,9 +5,8 @@ $finder = (new PhpCsFixer\Finder())
 ;
 
 return (new PhpCsFixer\Config())
-    ->setUnsupportedPhpVersionAllowed(true)
     ->setRules([
-        '@PER-CS' => true,
+        '@PER-CS3.0' => true,
         'no_unused_imports' => true,
         'ordered_imports' => true,
         'type_declaration_spaces' => true,

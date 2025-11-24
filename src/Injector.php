@@ -6,6 +6,7 @@ namespace Duyler\DI;
 
 use function current;
 
+use Duyler\DI\Exception\NotFoundException;
 use Duyler\DI\Exception\ResolveDependenciesTreeException;
 use Duyler\DI\Storage\ProviderArgumentsStorage;
 use Duyler\DI\Storage\ProviderFactoryServiceStorage;
@@ -20,8 +21,6 @@ use Throwable;
 
 final class Injector
 {
-    private array $definitions = [];
-
     /** @var Definition[] */
     private array $externalDefinitions = [];
 
@@ -98,6 +97,7 @@ final class Injector
 
     /**
      * @param array<string, string> $deps
+     * @throws NotFoundException
      */
     private function instanceClass(string $className, array $deps = []): void
     {
@@ -112,6 +112,8 @@ final class Injector
 
             if ($this->hasDefinition($dep)) {
                 $dependencies[$argName] = $this->getDefinitions($dep);
+            } else {
+                throw new NotFoundException($dep);
             }
         }
 

@@ -6,6 +6,7 @@ namespace Duyler\DI;
 
 use Duyler\DI\Attribute\Finalize;
 use Duyler\DI\Exception\FinalizeNotImplementException;
+use Duyler\DI\Exception\NotFoundException;
 use Duyler\DI\Provider\ProviderInterface;
 use Duyler\DI\Storage\ProviderArgumentsStorage;
 use Duyler\DI\Storage\ProviderFactoryServiceStorage;
@@ -16,12 +17,15 @@ use Duyler\DI\Storage\ServiceStorage;
 use function interface_exists;
 
 use Override;
+use Psr\Container\ContainerExceptionInterface;
 use ReflectionClass;
+use Throwable;
 
 class Container implements ContainerInterface
 {
     private readonly Injector $injector;
     private readonly DependencyMapper $dependencyMapper;
+    private readonly ContainerService $containerService;
     private readonly ServiceStorage $serviceStorage;
     private readonly ProviderStorage $providerStorage;
     private readonly ReflectionStorage $reflectionStorage;
@@ -42,6 +46,7 @@ class Container implements ContainerInterface
         $this->reflectionStorage = new ReflectionStorage();
         $this->argumentsStorage = new ProviderArgumentsStorage();
         $this->providerFactoryServiceStorage = new ProviderFactoryServiceStorage();
+        $this->containerService = new ContainerService($this);
 
         $this->injector = new Injector(
             serviceStorage: $this->serviceStorage,
@@ -55,7 +60,7 @@ class Container implements ContainerInterface
             serviceStorage: $this->serviceStorage,
             providerStorage: $this->providerStorage,
             argumentsStorage: $this->argumentsStorage,
-            containerService: new ContainerService($this),
+            containerService: $this->containerService,
             providerFactoryServiceStorage: $this->providerFactoryServiceStorage,
         );
 
@@ -68,13 +73,19 @@ class Container implements ContainerInterface
     }
 
     #[Override]
-    public function get(string $id): object
+    public function get(string $id): mixed
     {
         if ($this->has($id)) {
             return $this->serviceStorage->get($id);
         }
 
-        return $this->make($id);
+        try {
+            return $this->make($id);
+        } catch (ContainerExceptionInterface $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            throw new NotFoundException($id);
+        }
     }
 
     #[Override]
@@ -96,7 +107,7 @@ class Container implements ContainerInterface
         if (interface_exists($className)) {
             if ($this->providerStorage->has($className)) {
                 $provider = $this->providerStorage->get($className);
-                $service = $provider->factory(new ContainerService($this));
+                $service = $provider->factory($this->containerService);
 
                 if (null !== $service) {
                     if ($service instanceof $className) {
@@ -165,6 +176,7 @@ class Container implements ContainerInterface
         $tree = $this->dependenciesTree[$className];
         $this->injector->build($className, $tree);
 
+        /** @var object */
         return $this->get($className);
     }
 
@@ -180,6 +192,8 @@ class Container implements ContainerInterface
         $this->serviceStorage->reset();
         $this->providerFactoryServiceStorage->reset();
         $this->argumentsStorage->reset();
+        $this->dependenciesTree = [];
+        $this->finalizers = [];
         return $this;
     }
 
