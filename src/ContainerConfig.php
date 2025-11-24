@@ -18,6 +18,9 @@ class ContainerConfig
     /** @var array<string, Scope> */
     private array $scopes = [];
 
+    /** @var array<string, string|array<string>> */
+    private array $tags = [];
+
     /** @param array<string, string> $bind */
     public function withBind(array $bind): ContainerConfig
     {
@@ -44,6 +47,16 @@ class ContainerConfig
     public function withScope(string $className, Scope $scope): ContainerConfig
     {
         $this->scopes[$className] = $scope;
+
+        return $this;
+    }
+
+    /**
+     * @param string|array<string> $tags
+     */
+    public function withTag(string $serviceId, string|array $tags): ContainerConfig
+    {
+        $this->tags[$serviceId] = $tags;
 
         return $this;
     }
@@ -78,5 +91,13 @@ class ContainerConfig
     public function getScopes(): array
     {
         return $this->scopes;
+    }
+
+    /**
+     * @return array<string, string|array<string>>
+     */
+    public function getTags(): array
+    {
+        return $this->tags;
     }
 }

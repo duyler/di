@@ -15,6 +15,7 @@ use Duyler\DI\Storage\ProviderStorage;
 use Duyler\DI\Storage\ReflectionStorage;
 use Duyler\DI\Storage\ScopeStorage;
 use Duyler\DI\Storage\ServiceStorage;
+use Duyler\DI\Storage\TagStorage;
 
 use function interface_exists;
 
@@ -35,6 +36,7 @@ class Container implements ContainerInterface
     private readonly ProviderFactoryServiceStorage $providerFactoryServiceStorage;
     private readonly ScopeStorage $scopeStorage;
     private readonly FactoryStorage $factoryStorage;
+    private readonly TagStorage $tagStorage;
 
     /** @var array<string, array<string, array<string, string>>> */
     private array $dependenciesTree = [];
@@ -52,6 +54,7 @@ class Container implements ContainerInterface
         $this->providerFactoryServiceStorage = new ProviderFactoryServiceStorage();
         $this->scopeStorage = new ScopeStorage();
         $this->factoryStorage = new FactoryStorage();
+        $this->tagStorage = new TagStorage();
         $this->containerService = new ContainerService($this);
 
         $this->injector = new Injector(
@@ -79,6 +82,10 @@ class Container implements ContainerInterface
 
         foreach ($containerConfig?->getScopes() ?? [] as $className => $scope) {
             $this->scopeStorage->set($className, $scope);
+        }
+
+        foreach ($containerConfig?->getTags() ?? [] as $serviceId => $tags) {
+            $this->tagStorage->tag($serviceId, $tags);
         }
     }
 
@@ -337,5 +344,28 @@ class Container implements ContainerInterface
         }
 
         return $errors;
+    }
+
+    #[Override]
+    public function tag(string $serviceId, string|array $tags): self
+    {
+        $this->tagStorage->tag($serviceId, $tags);
+        return $this;
+    }
+
+    #[Override]
+    public function tagged(string $tag): array
+    {
+        $serviceIds = $this->tagStorage->tagged($tag);
+        /** @var array<object> */
+        $services = [];
+
+        foreach ($serviceIds as $serviceId) {
+            /** @var object */
+            $service = $this->get($serviceId);
+            $services[] = $service;
+        }
+
+        return $services;
     }
 }
