@@ -37,6 +37,7 @@ class Container implements ContainerInterface
     private readonly ScopeStorage $scopeStorage;
     private readonly FactoryStorage $factoryStorage;
     private readonly TagStorage $tagStorage;
+    private readonly DebugInfo $debugInfo;
 
     /** @var array<string, array<string, array<string, string>>> */
     private array $dependenciesTree = [];
@@ -55,7 +56,12 @@ class Container implements ContainerInterface
         $this->scopeStorage = new ScopeStorage();
         $this->factoryStorage = new FactoryStorage();
         $this->tagStorage = new TagStorage();
+        $this->debugInfo = new DebugInfo();
         $this->containerService = new ContainerService($this);
+
+        if ($containerConfig?->isDebugMode()) {
+            $this->debugInfo->enable();
+        }
 
         $this->injector = new Injector(
             serviceStorage: $this->serviceStorage,
@@ -96,7 +102,18 @@ class Container implements ContainerInterface
 
         if ($scope === Scope::Transient) {
             try {
-                return $this->makeTransient($id);
+                $startTime = microtime(true);
+                $startMemory = memory_get_usage();
+
+                $service = $this->makeTransient($id);
+
+                if ($this->debugInfo->isEnabled()) {
+                    $time = microtime(true) - $startTime;
+                    $memory = memory_get_usage() - $startMemory;
+                    $this->debugInfo->recordResolution($id, $time, $memory);
+                }
+
+                return $service;
             } catch (ContainerExceptionInterface $exception) {
                 throw $exception;
             } catch (Throwable $exception) {
@@ -109,15 +126,36 @@ class Container implements ContainerInterface
         }
 
         if ($this->factoryStorage->has($id)) {
+            $startTime = microtime(true);
+            $startMemory = memory_get_usage();
+
             $factory = $this->factoryStorage->get($id);
             /** @var object */
             $service = $factory($this);
             $this->serviceStorage->set($id, $service);
+
+            if ($this->debugInfo->isEnabled()) {
+                $time = microtime(true) - $startTime;
+                $memory = memory_get_usage() - $startMemory;
+                $this->debugInfo->recordResolution($id, $time, $memory);
+            }
+
             return $service;
         }
 
         try {
-            return $this->make($id);
+            $startTime = microtime(true);
+            $startMemory = memory_get_usage();
+
+            $service = $this->make($id);
+
+            if ($this->debugInfo->isEnabled()) {
+                $time = microtime(true) - $startTime;
+                $memory = memory_get_usage() - $startMemory;
+                $this->debugInfo->recordResolution($id, $time, $memory);
+            }
+
+            return $service;
         } catch (ContainerExceptionInterface $exception) {
             throw $exception;
         } catch (Throwable $exception) {
@@ -382,5 +420,27 @@ class Container implements ContainerInterface
         $services = array_merge($services, array_keys($this->providerStorage->getAll()));
 
         return array_unique($services);
+    }
+
+    public function enableDebug(): self
+    {
+        $this->debugInfo->enable();
+        return $this;
+    }
+
+    public function disableDebug(): self
+    {
+        $this->debugInfo->disable();
+        return $this;
+    }
+
+    public function isDebugEnabled(): bool
+    {
+        return $this->debugInfo->isEnabled();
+    }
+
+    public function getDebugInfo(): DebugInfo
+    {
+        return $this->debugInfo;
     }
 }
