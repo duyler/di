@@ -40,15 +40,9 @@ final class DependencyMapper
 
     /**
      * @param array<string, string> $classMap
-     * @throws InvalidBindingException
      */
     public function bind(array $classMap): void
     {
-        foreach ($classMap as $interface => $implementation) {
-            /** @psalm-suppress ArgumentTypeCoercion */
-            $this->validateBinding($interface, $implementation);
-        }
-
         $this->classMap = $classMap + $this->classMap;
     }
 
@@ -58,6 +52,25 @@ final class DependencyMapper
     public function getClassMap(): array
     {
         return $this->classMap;
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function validateBindings(): array
+    {
+        $errors = [];
+
+        foreach ($this->classMap as $interface => $implementation) {
+            try {
+                /** @psalm-suppress ArgumentTypeCoercion */
+                $this->validateBinding($interface, $implementation);
+            } catch (InvalidBindingException $exception) {
+                $errors[] = $exception->getMessage();
+            }
+        }
+
+        return $errors;
     }
 
     /**

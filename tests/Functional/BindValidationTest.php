@@ -13,55 +13,61 @@ use PHPUnit\Framework\TestCase;
 class BindValidationTest extends TestCase
 {
     #[Test]
-    public function throws_exception_when_interface_does_not_exist(): void
+    public function detects_error_when_interface_does_not_exist(): void
     {
-        $this->expectException(InvalidBindingException::class);
-        $this->expectExceptionMessage('Class "NonExistentInterface" does not exist');
-
         $config = new ContainerConfig();
         $config->withBind(['NonExistentInterface' => ValidImplementation::class]);
 
-        new Container($config);
+        $container = new Container($config);
+        $errors = $container->compile();
+
+        $this->assertNotEmpty($errors);
+        $this->assertStringContainsString('Class "NonExistentInterface" does not exist', $errors[0]);
     }
 
     #[Test]
-    public function throws_exception_when_implementation_does_not_exist(): void
+    public function detects_error_when_implementation_does_not_exist(): void
     {
-        $this->expectException(InvalidBindingException::class);
-        $this->expectExceptionMessage('Class "NonExistentImplementation" does not exist');
-
         $config = new ContainerConfig();
         $config->withBind([ValidInterface::class => 'NonExistentImplementation']);
 
-        new Container($config);
+        $container = new Container($config);
+        $errors = $container->compile();
+
+        $this->assertNotEmpty($errors);
+        $this->assertStringContainsString('Class "NonExistentImplementation" does not exist', $errors[0]);
     }
 
     #[Test]
-    public function throws_exception_when_implementation_does_not_implement_interface(): void
+    public function detects_error_when_implementation_does_not_implement_interface(): void
     {
-        $this->expectException(InvalidBindingException::class);
-        $this->expectExceptionMessage(
-            sprintf('Class "%s" does not implement interface "%s"', InvalidImplementation::class, ValidInterface::class)
-        );
-
         $config = new ContainerConfig();
         $config->withBind([ValidInterface::class => InvalidImplementation::class]);
 
-        new Container($config);
+        $container = new Container($config);
+        $errors = $container->compile();
+
+        $this->assertNotEmpty($errors);
+        $this->assertStringContainsString(
+            sprintf('Class "%s" does not implement interface "%s"', InvalidImplementation::class, ValidInterface::class),
+            $errors[0]
+        );
     }
 
     #[Test]
-    public function throws_exception_when_binding_concrete_class(): void
+    public function detects_error_when_binding_concrete_class(): void
     {
-        $this->expectException(InvalidBindingException::class);
-        $this->expectExceptionMessage(
-            sprintf('"%s" must be an interface or abstract class', ValidImplementation::class)
-        );
-
         $config = new ContainerConfig();
         $config->withBind([ValidImplementation::class => ValidImplementation::class]);
 
-        new Container($config);
+        $container = new Container($config);
+        $errors = $container->compile();
+
+        $this->assertNotEmpty($errors);
+        $this->assertStringContainsString(
+            sprintf('"%s" must be an interface or abstract class', ValidImplementation::class),
+            $errors[0]
+        );
     }
 
     #[Test]
@@ -90,17 +96,19 @@ class BindValidationTest extends TestCase
     }
 
     #[Test]
-    public function throws_exception_when_class_does_not_extend_abstract_class(): void
+    public function detects_error_when_class_does_not_extend_abstract_class(): void
     {
-        $this->expectException(InvalidBindingException::class);
-        $this->expectExceptionMessage(
-            sprintf('Class "%s" does not extend abstract class "%s"', ValidImplementation::class, AbstractClass::class)
-        );
-
         $config = new ContainerConfig();
         $config->withBind([AbstractClass::class => ValidImplementation::class]);
 
-        new Container($config);
+        $container = new Container($config);
+        $errors = $container->compile();
+
+        $this->assertNotEmpty($errors);
+        $this->assertStringContainsString(
+            sprintf('Class "%s" does not extend abstract class "%s"', ValidImplementation::class, AbstractClass::class),
+            $errors[0]
+        );
     }
 }
 
