@@ -128,7 +128,7 @@ final class Injector
             if ($this->hasDefinition($dep)) {
                 $dependencies[$argName] = $this->getDefinitions($dep);
             } else {
-                throw new NotFoundException($dep);
+                throw new NotFoundException($dep, []);
             }
         }
 
@@ -167,7 +167,12 @@ final class Injector
 
                 $this->setDefinitions($className, $definition);
             } catch (Throwable $exception) {
-                throw new ResolveDependenciesTreeException($exception->getMessage() . ' in ' . $className);
+                throw new ResolveDependenciesTreeException(
+                    $className,
+                    $exception->getMessage(),
+                    [],
+                    $exception,
+                );
             }
         }
     }
@@ -198,7 +203,12 @@ final class Injector
 
             return $instance;
         } catch (Throwable $exception) {
-            throw new ResolveDependenciesTreeException($exception->getMessage() . ' in ' . $className);
+            throw new ResolveDependenciesTreeException(
+                $className,
+                $exception->getMessage(),
+                [],
+                $exception,
+            );
         }
     }
 
@@ -230,7 +240,7 @@ final class Injector
             if ($this->hasDefinition($dep)) {
                 $dependencies[$argName] = $this->getDefinitions($dep);
             } else {
-                throw new NotFoundException($dep);
+                throw new NotFoundException($dep, []);
             }
         }
 
@@ -260,7 +270,12 @@ final class Injector
 
             return $instance;
         } catch (Throwable $exception) {
-            throw new ResolveDependenciesTreeException($exception->getMessage() . ' in ' . $className);
+            throw new ResolveDependenciesTreeException(
+                $className,
+                $exception->getMessage(),
+                [],
+                $exception,
+            );
         }
     }
 }

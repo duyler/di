@@ -21,6 +21,7 @@ A modern, flexible, and type-safe dependency injection container for PHP applica
 - Binding validation
 - Callback factories
 - Compile-time dependency validation
+- Enhanced error messages with suggestions and context
 
 ## Installation
 
@@ -273,6 +274,26 @@ if (empty($errors)) {
     }
 }
 ```
+
+### Enhanced Error Messages
+
+The container provides detailed error messages with helpful context and suggestions:
+
+**Service Not Found with Suggestions:**
+
+When a service cannot be found, the container suggests similar service names and provides multiple solutions.
+
+**Circular Reference with Full Chain:**
+
+Shows the complete dependency chain leading to the circular reference, making it easy to identify and fix the issue.
+
+**Invalid Binding with Requirements:**
+
+Explains why a binding is invalid and shows the requirements that must be met, along with a correct example.
+
+**Dependency Resolution Errors with Context:**
+
+When dependency resolution fails, shows the full dependency chain and the reason for failure with actionable solutions.
 
 ## Contributing
 

@@ -104,7 +104,8 @@ final class DependencyMapper
     private function prepareDependencies(string $className): void
     {
         if (isset($this->resolutionStack[$className])) {
-            throw new CircularReferenceException($className, $className);
+            $chain = array_keys($this->resolutionStack);
+            throw new CircularReferenceException($className, $className, $chain);
         }
 
         $this->resolutionStack[$className] = true;
