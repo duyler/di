@@ -12,10 +12,12 @@ use Duyler\DI\Storage\ProviderArgumentsStorage;
 use Duyler\DI\Storage\ProviderFactoryServiceStorage;
 use Duyler\DI\Storage\ProviderStorage;
 use Duyler\DI\Storage\ReflectionStorage;
+use Duyler\DI\Storage\ScopeStorage;
 use Duyler\DI\Storage\ServiceStorage;
 
 use function interface_exists;
 
+use Duyler\DI\Scope;
 use Override;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionClass;
@@ -31,6 +33,7 @@ class Container implements ContainerInterface
     private readonly ReflectionStorage $reflectionStorage;
     private readonly ProviderArgumentsStorage $argumentsStorage;
     private readonly ProviderFactoryServiceStorage $providerFactoryServiceStorage;
+    private readonly ScopeStorage $scopeStorage;
 
     /** @var array<string, array<string, array<string, string>>> */
     private array $dependenciesTree = [];
@@ -46,6 +49,7 @@ class Container implements ContainerInterface
         $this->reflectionStorage = new ReflectionStorage();
         $this->argumentsStorage = new ProviderArgumentsStorage();
         $this->providerFactoryServiceStorage = new ProviderFactoryServiceStorage();
+        $this->scopeStorage = new ScopeStorage();
         $this->containerService = new ContainerService($this);
 
         $this->injector = new Injector(
@@ -70,11 +74,27 @@ class Container implements ContainerInterface
         foreach ($containerConfig?->getDefinitions() ?? [] as $definition) {
             $this->addDefinition($definition);
         }
+
+        foreach ($containerConfig?->getScopes() ?? [] as $className => $scope) {
+            $this->scopeStorage->set($className, $scope);
+        }
     }
 
     #[Override]
     public function get(string $id): mixed
     {
+        $scope = $this->scopeStorage->get($id);
+
+        if ($scope === Scope::Transient) {
+            try {
+                return $this->makeTransient($id);
+            } catch (ContainerExceptionInterface $exception) {
+                throw $exception;
+            } catch (Throwable $exception) {
+                throw new NotFoundException($id);
+            }
+        }
+
         if ($this->has($id)) {
             return $this->serviceStorage->get($id);
         }
@@ -178,6 +198,32 @@ class Container implements ContainerInterface
 
         /** @var object */
         return $this->get($className);
+    }
+
+    private function makeTransient(string $className): object
+    {
+        if (interface_exists($className)) {
+            if ($this->providerStorage->has($className)) {
+                $provider = $this->providerStorage->get($className);
+                $service = $provider->factory($this->containerService);
+
+                if (null !== $service) {
+                    if ($service instanceof $className) {
+                        return $service;
+                    }
+                }
+            }
+            $className = $this->dependencyMapper->getBind($className);
+        }
+
+        if (!isset($this->dependenciesTree[$className])) {
+            $this->dependenciesTree[$className] = $this->dependencyMapper->resolve($className);
+        }
+
+        /** @var array<string, array<string, string>> $tree */
+        $tree = $this->dependenciesTree[$className];
+
+        return $this->injector->buildTransient($className, $tree);
     }
 
     #[Override]
