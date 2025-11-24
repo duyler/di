@@ -43,4 +43,9 @@ interface ContainerInterface extends PsrContainerInterface
     public function addFinalizer(string $class, callable $finalizer): self;
 
     public function factory(string $className, callable $factory): self;
+
+    /**
+     * @return array<string>
+     */
+    public function compile(): array;
 }

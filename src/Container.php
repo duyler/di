@@ -309,4 +309,28 @@ class Container implements ContainerInterface
         $this->factoryStorage->set($className, $factory);
         return $this;
     }
+
+    #[Override]
+    public function compile(): array
+    {
+        $errors = [];
+        $classMap = $this->dependencyMapper->getClassMap();
+
+        foreach ($classMap as $interface => $implementation) {
+            try {
+                if (!isset($this->dependenciesTree[$implementation])) {
+                    $this->dependenciesTree[$implementation] = $this->dependencyMapper->resolve($implementation);
+                }
+            } catch (Throwable $exception) {
+                $errors[] = sprintf(
+                    'Failed to resolve "%s" bound to "%s": %s',
+                    $interface,
+                    $implementation,
+                    $exception->getMessage()
+                );
+            }
+        }
+
+        return $errors;
+    }
 }
