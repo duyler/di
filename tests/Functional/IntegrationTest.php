@@ -137,15 +137,15 @@ class IntegrationTest extends TestCase
     {
         $container = new Container();
         $container->bind([
-            'Interface1' => 'Implementation1',
-            'Interface2' => 'Implementation2',
+            TestInterface1::class => TestImplementation1::class,
+            TestInterface2::class => TestImplementation2::class,
         ]);
 
         $classMap = $container->getClassMap();
 
         $this->assertCount(2, $classMap);
-        $this->assertEquals('Implementation1', $classMap['Interface1']);
-        $this->assertEquals('Implementation2', $classMap['Interface2']);
+        $this->assertEquals(TestImplementation1::class, $classMap[TestInterface1::class]);
+        $this->assertEquals(TestImplementation2::class, $classMap[TestInterface2::class]);
     }
 
     #[Test]
@@ -417,3 +417,11 @@ class ComplexDependencyService
         private SharedDependency $shared,
     ) {}
 }
+
+interface TestInterface1 {}
+
+class TestImplementation1 implements TestInterface1 {}
+
+interface TestInterface2 {}
+
+class TestImplementation2 implements TestInterface2 {}

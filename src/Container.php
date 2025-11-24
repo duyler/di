@@ -8,6 +8,7 @@ use Duyler\DI\Attribute\Finalize;
 use Duyler\DI\Exception\FinalizeNotImplementException;
 use Duyler\DI\Exception\NotFoundException;
 use Duyler\DI\Provider\ProviderInterface;
+use Duyler\DI\Storage\FactoryStorage;
 use Duyler\DI\Storage\ProviderArgumentsStorage;
 use Duyler\DI\Storage\ProviderFactoryServiceStorage;
 use Duyler\DI\Storage\ProviderStorage;
@@ -34,6 +35,7 @@ class Container implements ContainerInterface
     private readonly ProviderArgumentsStorage $argumentsStorage;
     private readonly ProviderFactoryServiceStorage $providerFactoryServiceStorage;
     private readonly ScopeStorage $scopeStorage;
+    private readonly FactoryStorage $factoryStorage;
 
     /** @var array<string, array<string, array<string, string>>> */
     private array $dependenciesTree = [];
@@ -50,6 +52,7 @@ class Container implements ContainerInterface
         $this->argumentsStorage = new ProviderArgumentsStorage();
         $this->providerFactoryServiceStorage = new ProviderFactoryServiceStorage();
         $this->scopeStorage = new ScopeStorage();
+        $this->factoryStorage = new FactoryStorage();
         $this->containerService = new ContainerService($this);
 
         $this->injector = new Injector(
@@ -97,6 +100,14 @@ class Container implements ContainerInterface
 
         if ($this->has($id)) {
             return $this->serviceStorage->get($id);
+        }
+
+        if ($this->factoryStorage->has($id)) {
+            $factory = $this->factoryStorage->get($id);
+            /** @var object */
+            $service = $factory($this);
+            $this->serviceStorage->set($id, $service);
+            return $service;
         }
 
         try {
@@ -238,6 +249,7 @@ class Container implements ContainerInterface
         $this->serviceStorage->reset();
         $this->providerFactoryServiceStorage->reset();
         $this->argumentsStorage->reset();
+        $this->factoryStorage->reset();
         $this->dependenciesTree = [];
         $this->finalizers = [];
         return $this;
@@ -288,6 +300,13 @@ class Container implements ContainerInterface
     public function addFinalizer(string $class, callable $finalizer): self
     {
         $this->finalizers[$class] = $finalizer;
+        return $this;
+    }
+
+    #[Override]
+    public function factory(string $className, callable $factory): self
+    {
+        $this->factoryStorage->set($className, $factory);
         return $this;
     }
 }
