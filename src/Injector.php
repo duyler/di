@@ -56,6 +56,21 @@ final class Injector
         $this->iterateDependenciesTree();
     }
 
+    /**
+     * @param array<string, array<string, string>> $dependenciesTree
+     * @throws ResolveDependenciesTreeException
+     */
+    public function buildTransient(string $className, array $dependenciesTree = []): object
+    {
+        $this->dependenciesTree = $dependenciesTree;
+
+        if (empty($this->dependenciesTree)) {
+            return $this->createTransientInstance($className);
+        }
+
+        return $this->createTransientWithDependencies($className);
+    }
+
     private function setDefinitions(string $className, object $definition): void
     {
         if (false === $this->serviceStorage->has($className)) {
@@ -154,6 +169,98 @@ final class Injector
             } catch (Throwable $exception) {
                 throw new ResolveDependenciesTreeException($exception->getMessage() . ' in ' . $className);
             }
+        }
+    }
+
+    /**
+     * @throws ResolveDependenciesTreeException
+     * @psalm-suppress InvalidStringClass
+     */
+    private function createTransientInstance(string $className): object
+    {
+        $arguments = $this->argumentsStorage->get($className);
+
+        if (isset($this->externalDefinitions[$className])) {
+            $arguments = $this->externalDefinitions[$className]->arguments + $arguments;
+        }
+
+        try {
+            if ($this->providerFactoryServiceStorage->has($className)) {
+                return $this->providerFactoryServiceStorage->get($className);
+            }
+
+            $instance = new $className(...$arguments);
+
+            if ($this->providerStorage->has($className)) {
+                $provider = $this->providerStorage->get($className);
+                $provider->accept($instance);
+            }
+
+            return $instance;
+        } catch (Throwable $exception) {
+            throw new ResolveDependenciesTreeException($exception->getMessage() . ' in ' . $className);
+        }
+    }
+
+    /**
+     * @throws ResolveDependenciesTreeException
+     */
+    private function createTransientWithDependencies(string $className): object
+    {
+        $targetDeps = $this->dependenciesTree[$className] ?? [];
+
+        if (empty($targetDeps)) {
+            return $this->createTransientInstance($className);
+        }
+
+        $dependencies = [];
+
+        foreach ($targetDeps as $argName => $dep) {
+            if ($this->hasDefinition($dep)) {
+                $dependencies[$argName] = $this->getDefinitions($dep);
+                continue;
+            }
+
+            if (isset($this->dependenciesTree[$dep])) {
+                $this->instanceClass($dep, $this->dependenciesTree[$dep]);
+            } else {
+                $this->instanceClass($dep);
+            }
+
+            if ($this->hasDefinition($dep)) {
+                $dependencies[$argName] = $this->getDefinitions($dep);
+            } else {
+                throw new NotFoundException($dep);
+            }
+        }
+
+        return $this->createTransientInstanceWithDeps($className, $dependencies);
+    }
+
+    /**
+     * @param array<string, object> $dependencies
+     * @throws ResolveDependenciesTreeException
+     * @psalm-suppress InvalidStringClass
+     */
+    private function createTransientInstanceWithDeps(string $className, array $dependencies): object
+    {
+        $arguments = $this->argumentsStorage->get($className);
+
+        if (isset($this->externalDefinitions[$className])) {
+            $arguments = $this->externalDefinitions[$className]->arguments + $arguments;
+        }
+
+        try {
+            $instance = new $className(...$arguments + $dependencies);
+
+            if ($this->providerStorage->has($className)) {
+                $provider = $this->providerStorage->get($className);
+                $provider->accept($instance);
+            }
+
+            return $instance;
+        } catch (Throwable $exception) {
+            throw new ResolveDependenciesTreeException($exception->getMessage() . ' in ' . $className);
         }
     }
 }

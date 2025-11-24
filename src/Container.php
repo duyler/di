@@ -8,10 +8,12 @@ use Duyler\DI\Attribute\Finalize;
 use Duyler\DI\Exception\FinalizeNotImplementException;
 use Duyler\DI\Exception\NotFoundException;
 use Duyler\DI\Provider\ProviderInterface;
+use Duyler\DI\Storage\FactoryStorage;
 use Duyler\DI\Storage\ProviderArgumentsStorage;
 use Duyler\DI\Storage\ProviderFactoryServiceStorage;
 use Duyler\DI\Storage\ProviderStorage;
 use Duyler\DI\Storage\ReflectionStorage;
+use Duyler\DI\Storage\ScopeStorage;
 use Duyler\DI\Storage\ServiceStorage;
 
 use function interface_exists;
@@ -31,6 +33,8 @@ class Container implements ContainerInterface
     private readonly ReflectionStorage $reflectionStorage;
     private readonly ProviderArgumentsStorage $argumentsStorage;
     private readonly ProviderFactoryServiceStorage $providerFactoryServiceStorage;
+    private readonly ScopeStorage $scopeStorage;
+    private readonly FactoryStorage $factoryStorage;
 
     /** @var array<string, array<string, array<string, string>>> */
     private array $dependenciesTree = [];
@@ -46,6 +50,8 @@ class Container implements ContainerInterface
         $this->reflectionStorage = new ReflectionStorage();
         $this->argumentsStorage = new ProviderArgumentsStorage();
         $this->providerFactoryServiceStorage = new ProviderFactoryServiceStorage();
+        $this->scopeStorage = new ScopeStorage();
+        $this->factoryStorage = new FactoryStorage();
         $this->containerService = new ContainerService($this);
 
         $this->injector = new Injector(
@@ -70,13 +76,37 @@ class Container implements ContainerInterface
         foreach ($containerConfig?->getDefinitions() ?? [] as $definition) {
             $this->addDefinition($definition);
         }
+
+        foreach ($containerConfig?->getScopes() ?? [] as $className => $scope) {
+            $this->scopeStorage->set($className, $scope);
+        }
     }
 
     #[Override]
     public function get(string $id): mixed
     {
+        $scope = $this->scopeStorage->get($id);
+
+        if ($scope === Scope::Transient) {
+            try {
+                return $this->makeTransient($id);
+            } catch (ContainerExceptionInterface $exception) {
+                throw $exception;
+            } catch (Throwable $exception) {
+                throw new NotFoundException($id);
+            }
+        }
+
         if ($this->has($id)) {
             return $this->serviceStorage->get($id);
+        }
+
+        if ($this->factoryStorage->has($id)) {
+            $factory = $this->factoryStorage->get($id);
+            /** @var object */
+            $service = $factory($this);
+            $this->serviceStorage->set($id, $service);
+            return $service;
         }
 
         try {
@@ -180,6 +210,32 @@ class Container implements ContainerInterface
         return $this->get($className);
     }
 
+    private function makeTransient(string $className): object
+    {
+        if (interface_exists($className)) {
+            if ($this->providerStorage->has($className)) {
+                $provider = $this->providerStorage->get($className);
+                $service = $provider->factory($this->containerService);
+
+                if (null !== $service) {
+                    if ($service instanceof $className) {
+                        return $service;
+                    }
+                }
+            }
+            $className = $this->dependencyMapper->getBind($className);
+        }
+
+        if (!isset($this->dependenciesTree[$className])) {
+            $this->dependenciesTree[$className] = $this->dependencyMapper->resolve($className);
+        }
+
+        /** @var array<string, array<string, string>> $tree */
+        $tree = $this->dependenciesTree[$className];
+
+        return $this->injector->buildTransient($className, $tree);
+    }
+
     #[Override]
     public function getDependencyTree(): array
     {
@@ -192,6 +248,7 @@ class Container implements ContainerInterface
         $this->serviceStorage->reset();
         $this->providerFactoryServiceStorage->reset();
         $this->argumentsStorage->reset();
+        $this->factoryStorage->reset();
         $this->dependenciesTree = [];
         $this->finalizers = [];
         return $this;
@@ -243,5 +300,42 @@ class Container implements ContainerInterface
     {
         $this->finalizers[$class] = $finalizer;
         return $this;
+    }
+
+    #[Override]
+    public function factory(string $className, callable $factory): self
+    {
+        $this->factoryStorage->set($className, $factory);
+        return $this;
+    }
+
+    #[Override]
+    public function compile(): array
+    {
+        $errors = [];
+
+        // Validate bindings first
+        $bindingErrors = $this->dependencyMapper->validateBindings();
+        $errors = array_merge($errors, $bindingErrors);
+
+        // Then validate dependency resolution
+        $classMap = $this->dependencyMapper->getClassMap();
+
+        foreach ($classMap as $interface => $implementation) {
+            try {
+                if (!isset($this->dependenciesTree[$implementation])) {
+                    $this->dependenciesTree[$implementation] = $this->dependencyMapper->resolve($implementation);
+                }
+            } catch (Throwable $exception) {
+                $errors[] = sprintf(
+                    'Failed to resolve "%s" bound to "%s": %s',
+                    $interface,
+                    $implementation,
+                    $exception->getMessage(),
+                );
+            }
+        }
+
+        return $errors;
     }
 }

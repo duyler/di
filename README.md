@@ -17,6 +17,10 @@ A modern, flexible, and type-safe dependency injection container for PHP applica
 - Reflection caching
 - Dependency tree visualization
 - Strict type checking
+- Scoped services (Singleton, Transient)
+- Binding validation
+- Callback factories
+- Compile-time dependency validation
 
 ## Installation
 
@@ -163,7 +167,111 @@ $tree = $container->getDependencyTree();
 $container = new Container();
 $myObject = $container->get(MyClass::class);
 $classMap = $container->getClassMap();
+```
 
+## Advanced Features
+
+### Service Scopes
+
+Control the lifecycle of your services with scopes:
+
+```php
+use Duyler\DI\Container;
+use Duyler\DI\ContainerConfig;
+use Duyler\DI\Scope;
+
+$config = new ContainerConfig();
+$config->withScope(TransientService::class, Scope::Transient);
+
+$container = new Container($config);
+
+// Singleton (default) - same instance every time
+$singleton1 = $container->get(MySingletonService::class);
+$singleton2 = $container->get(MySingletonService::class);
+// $singleton1 === $singleton2
+
+// Transient - new instance every time
+$transient1 = $container->get(TransientService::class);
+$transient2 = $container->get(TransientService::class);
+// $transient1 !== $transient2
+```
+
+### Callback Factories
+
+Register custom factory functions for complex service creation:
+
+```php
+use Duyler\DI\Container;
+use Duyler\DI\ContainerInterface;
+
+$container = new Container();
+
+$container->factory(MyService::class, function (ContainerInterface $c) {
+    $dependency = $c->get(Dependency::class);
+    return new MyService($dependency, 'custom_config_value');
+});
+
+$service = $container->get(MyService::class);
+// Factory is called once, result is cached (singleton)
+```
+
+### Binding Validation
+
+Bindings are automatically validated to prevent configuration errors:
+
+```php
+use Duyler\DI\Container;
+use Duyler\DI\ContainerConfig;
+use Duyler\DI\Exception\InvalidBindingException;
+
+$config = new ContainerConfig();
+
+// Valid binding
+$config->withBind([
+    MyInterface::class => MyImplementation::class,
+]);
+
+// Invalid bindings throw InvalidBindingException:
+// - Interface does not exist
+// - Implementation does not exist  
+// - Implementation does not implement interface
+// - Binding concrete class to concrete class
+try {
+    $config->withBind([
+        ConcreteClass::class => AnotherClass::class, // Error!
+    ]);
+    $container = new Container($config);
+} catch (InvalidBindingException $e) {
+    // Handle validation error
+}
+```
+
+### Compile-time Validation
+
+Validate all dependencies before runtime to catch configuration errors early:
+
+```php
+use Duyler\DI\Container;
+use Duyler\DI\ContainerConfig;
+
+$config = new ContainerConfig();
+$config->withBind([
+    MyInterface::class => MyImplementation::class,
+    AnotherInterface::class => AnotherImplementation::class,
+]);
+
+$container = new Container($config);
+
+// Validate all bindings without instantiating services
+$errors = $container->compile();
+
+if (empty($errors)) {
+    echo "All dependencies are valid!";
+} else {
+    foreach ($errors as $error) {
+        echo "Dependency error: $error\n";
+    }
+}
 ```
 
 ## Contributing

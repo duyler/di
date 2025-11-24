@@ -7,6 +7,7 @@ namespace Duyler\DI;
 use Duyler\DI\Exception\CircularReferenceException;
 use Duyler\DI\Exception\InterfaceBindNotFoundException;
 use Duyler\DI\Exception\InterfaceMapNotFoundException;
+use Duyler\DI\Exception\InvalidBindingException;
 use Duyler\DI\Provider\ProviderInterface;
 use Duyler\DI\Storage\ProviderArgumentsStorage;
 use Duyler\DI\Storage\ProviderFactoryServiceStorage;
@@ -14,6 +15,7 @@ use Duyler\DI\Storage\ProviderStorage;
 use Duyler\DI\Storage\ReflectionStorage;
 use Duyler\DI\Storage\ServiceStorage;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionMethod;
 
 final class DependencyMapper
@@ -50,6 +52,25 @@ final class DependencyMapper
     public function getClassMap(): array
     {
         return $this->classMap;
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function validateBindings(): array
+    {
+        $errors = [];
+
+        foreach ($this->classMap as $interface => $implementation) {
+            try {
+                /** @psalm-suppress ArgumentTypeCoercion */
+                $this->validateBinding($interface, $implementation);
+            } catch (InvalidBindingException $exception) {
+                $errors[] = $exception->getMessage();
+            }
+        }
+
+        return $errors;
     }
 
     /**
@@ -157,7 +178,7 @@ final class DependencyMapper
                 }
             }
 
-            if ($reflectionClass->isInterface()) {
+            if ($reflectionClass->isInterface() || $reflectionClass->isAbstract()) {
                 $this->prepareInterface($reflectionClass, $className, $paramArgClassName);
                 continue;
             }
@@ -216,5 +237,48 @@ final class DependencyMapper
     {
         $this->prepareDependencies($depClassName);
         $this->dependencies[$className][$depArgName] = $depClassName;
+    }
+
+    /**
+     * @param class-string $interface
+     * @param class-string $implementation
+     * @throws InvalidBindingException
+     */
+    private function validateBinding(string $interface, string $implementation): void
+    {
+        try {
+            $reflectionInterface = new ReflectionClass($interface);
+            $reflectionImplementation = new ReflectionClass($implementation);
+        } catch (ReflectionException $exception) {
+            throw new InvalidBindingException(
+                $interface,
+                $implementation,
+                $exception->getMessage(),
+            );
+        }
+
+        if ($reflectionInterface->isInterface() && !$reflectionImplementation->implementsInterface($interface)) {
+            throw new InvalidBindingException(
+                $interface,
+                $implementation,
+                sprintf('Class "%s" does not implement interface "%s"', $implementation, $interface),
+            );
+        }
+
+        if ($reflectionInterface->isAbstract() && !$reflectionImplementation->isSubclassOf($interface)) {
+            throw new InvalidBindingException(
+                $interface,
+                $implementation,
+                sprintf('Class "%s" does not extend abstract class "%s"', $implementation, $interface),
+            );
+        }
+
+        if (!$reflectionInterface->isInterface() && !$reflectionInterface->isAbstract()) {
+            throw new InvalidBindingException(
+                $interface,
+                $implementation,
+                sprintf('"%s" must be an interface or abstract class', $interface),
+            );
+        }
     }
 }
