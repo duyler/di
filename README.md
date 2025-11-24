@@ -18,6 +18,7 @@ A modern, flexible, and type-safe dependency injection container for PHP applica
 - Dependency tree visualization
 - Strict type checking
 - Scoped services (Singleton, Transient)
+- Tagged services for grouping and bulk retrieval
 - Binding validation
 - Callback factories
 - Compile-time dependency validation
@@ -170,6 +171,43 @@ $classMap = $container->getClassMap();
 ```
 
 ## Advanced Features
+
+### Tagged Services
+
+Tag services to group them by functionality and retrieve them as a collection:
+
+```php
+use Duyler\DI\Container;
+use Duyler\DI\ContainerConfig;
+
+$container = new Container();
+
+// Tag services at runtime
+$container->tag(EventListener1::class, 'event.listener');
+$container->tag(EventListener2::class, 'event.listener');
+$container->tag(EventListener3::class, 'event.listener');
+
+// Get all services with a specific tag
+$listeners = $container->tagged('event.listener');
+// Returns: [EventListener1, EventListener2, EventListener3]
+
+// Tag a service with multiple tags
+$container->tag(LoggerService::class, ['logger', 'monitor', 'debug']);
+
+// Configure tags via ContainerConfig
+$config = new ContainerConfig();
+$config->withTag(CacheListener::class, 'event.listener');
+$config->withTag(EmailListener::class, ['event.listener', 'notification']);
+
+$container = new Container($config);
+```
+
+Common use cases:
+- Event listeners and subscribers
+- Middleware stacks
+- Plugin systems
+- Decorator chains
+- Command handlers
 
 ### Service Scopes
 

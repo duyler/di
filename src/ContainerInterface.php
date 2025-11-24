@@ -51,4 +51,14 @@ interface ContainerInterface extends PsrContainerInterface
      * @return array<string>
      */
     public function compile(): array;
+
+    /**
+     * @param string|array<string> $tags
+     */
+    public function tag(string $serviceId, string|array $tags): self;
+
+    /**
+     * @return array<object>
+     */
+    public function tagged(string $tag): array;
 }
