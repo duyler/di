@@ -126,6 +126,55 @@ class TaggedServicesTest extends TestCase
 
         $this->assertCount(1, $services);
     }
+
+    #[Test]
+    public function reset_clears_all_tags(): void
+    {
+        $container = new Container();
+        $container->tag(TaggedService1::class, 'tag1');
+        $container->tag(TaggedService2::class, 'tag2');
+
+        $this->assertCount(1, $container->tagged('tag1'));
+        $this->assertCount(1, $container->tagged('tag2'));
+
+        $container->reset();
+
+        $this->assertEmpty($container->tagged('tag1'));
+        $this->assertEmpty($container->tagged('tag2'));
+    }
+
+    #[Test]
+    public function tags_persist_across_multiple_get_calls(): void
+    {
+        $container = new Container();
+        $container->tag(TaggedService1::class, 'persistent.tag');
+
+        $services1 = $container->tagged('persistent.tag');
+        $services2 = $container->tagged('persistent.tag');
+        $services3 = $container->tagged('persistent.tag');
+
+        $this->assertCount(1, $services1);
+        $this->assertCount(1, $services2);
+        $this->assertCount(1, $services3);
+
+        $this->assertSame($services1[0], $services2[0]);
+        $this->assertSame($services2[0], $services3[0]);
+    }
+
+    #[Test]
+    public function tag_with_binding(): void
+    {
+        $config = new ContainerConfig();
+        $config->withBind([TaggedInterface::class => TaggedImplementation::class]);
+
+        $container = new Container($config);
+        $container->tag(TaggedInterface::class, 'interface.tag');
+
+        $services = $container->tagged('interface.tag');
+
+        $this->assertCount(1, $services);
+        $this->assertInstanceOf(TaggedImplementation::class, $services[0]);
+    }
 }
 
 class TaggedService1 {}
@@ -138,3 +187,7 @@ class TaggedServiceWithDependency
 {
     public function __construct(public TaggedSimpleDependency $dependency) {}
 }
+
+interface TaggedInterface {}
+
+class TaggedImplementation implements TaggedInterface {}

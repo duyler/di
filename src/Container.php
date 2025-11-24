@@ -256,6 +256,7 @@ class Container implements ContainerInterface
         $this->providerFactoryServiceStorage->reset();
         $this->argumentsStorage->reset();
         $this->factoryStorage->reset();
+        $this->tagStorage->reset();
         $this->dependenciesTree = [];
         $this->finalizers = [];
         return $this;
