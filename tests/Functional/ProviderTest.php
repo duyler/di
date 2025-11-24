@@ -41,13 +41,13 @@ class ProviderTest extends TestCase
     {
         $config = new ContainerConfig();
         $config->withProvider([
-            ComplexServiceInterface::class => ComplexServiceProvider::class,
+            ComplexProviderServiceInterface::class => ComplexServiceProvider::class,
         ]);
 
         $container = new Container($config);
-        $service = $container->get(ComplexServiceInterface::class);
+        $service = $container->get(ComplexProviderServiceInterface::class);
 
-        $this->assertInstanceOf(ComplexService::class, $service);
+        $this->assertInstanceOf(ComplexProviderService::class, $service);
         $this->assertInstanceOf(TestProviderDependency::class, $service->getDependency());
     }
 
@@ -106,12 +106,12 @@ class TestProvider implements ProviderInterface
     }
 }
 
-interface ComplexServiceInterface
+interface ComplexProviderServiceInterface
 {
     public function getDependency(): TestProviderDependency;
 }
 
-class ComplexService implements ComplexServiceInterface
+class ComplexProviderService implements ComplexProviderServiceInterface
 {
     private TestProviderDependency $dependency;
 
@@ -138,7 +138,7 @@ class ComplexServiceProvider implements ProviderInterface
     public function bind(): array
     {
         return [
-            ComplexServiceInterface::class => ComplexService::class,
+            ComplexProviderServiceInterface::class => ComplexProviderService::class,
         ];
     }
 
@@ -151,7 +151,7 @@ class ComplexServiceProvider implements ProviderInterface
 
     public function factory(ContainerService $containerService): ?object
     {
-        return new ComplexService(
+        return new ComplexProviderService(
             $containerService->getInstance(TestProviderDependency::class),
         );
     }
