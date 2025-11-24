@@ -23,6 +23,7 @@ A modern, flexible, and type-safe dependency injection container for PHP applica
 - Callback factories
 - Compile-time dependency validation
 - Enhanced error messages with suggestions and context
+- Debug mode with profiling and statistics
 
 ## Installation
 
@@ -332,6 +333,67 @@ Explains why a binding is invalid and shows the requirements that must be met, a
 **Dependency Resolution Errors with Context:**
 
 When dependency resolution fails, shows the full dependency chain and the reason for failure with actionable solutions.
+
+### Debug Mode
+
+Enable debug mode to monitor and profile your container's dependency resolution:
+
+```php
+use Duyler\DI\Container;
+use Duyler\DI\ContainerConfig;
+
+// Enable via configuration
+$config = new ContainerConfig();
+$config->withDebugMode(true);
+$container = new Container($config);
+
+// Or enable manually
+$container = new Container();
+$container->enableDebug();
+
+// Resolve some services
+$container->get(MyService::class);
+$container->get(AnotherService::class);
+
+// Get debug information
+$debugInfo = $container->getDebugInfo();
+
+// View statistics
+$stats = $debugInfo->getStatistics();
+echo "Total resolutions: {$stats['total_resolutions']}\n";
+echo "Unique services: {$stats['unique_services']}\n";
+echo "Total time: {$stats['total_time']}s\n";
+echo "Peak memory: {$stats['peak_memory']} bytes\n";
+echo "Average time: {$stats['avg_time']}s\n";
+
+// Get detailed resolution data
+$resolutions = $debugInfo->getResolutions();
+foreach ($resolutions as $serviceId => $data) {
+    echo "$serviceId: {$data['count']} times, {$data['total_time']}s total\n";
+}
+
+// Find performance bottlenecks
+$slowest = $debugInfo->getSlowestServices(5);
+$mostResolved = $debugInfo->getMostResolvedServices(5);
+
+// View resolution log with timestamps
+$log = $debugInfo->getResolutionLog();
+foreach ($log as $entry) {
+    echo "{$entry['service']}: {$entry['time']}s, {$entry['memory']} bytes, depth: {$entry['depth']}\n";
+}
+
+// Disable debug mode when not needed (improves performance)
+$container->disableDebug();
+```
+
+Debug mode features:
+- Track resolution count for each service
+- Measure time and memory usage per service
+- Calculate average resolution time
+- Identify slowest services
+- Find most frequently resolved services
+- Complete resolution log with timestamps
+- Minimal overhead when disabled
 
 ## Contributing
 

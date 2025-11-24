@@ -21,6 +21,8 @@ class ContainerConfig
     /** @var array<string, string|array<string>> */
     private array $tags = [];
 
+    private bool $debugMode = false;
+
     /** @param array<string, string> $bind */
     public function withBind(array $bind): ContainerConfig
     {
@@ -99,5 +101,16 @@ class ContainerConfig
     public function getTags(): array
     {
         return $this->tags;
+    }
+
+    public function withDebugMode(bool $enabled = true): ContainerConfig
+    {
+        $this->debugMode = $enabled;
+        return $this;
+    }
+
+    public function isDebugMode(): bool
+    {
+        return $this->debugMode;
     }
 }
