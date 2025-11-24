@@ -128,26 +128,7 @@ class Container implements ContainerInterface
 
         if ($scope === Scope::Transient) {
             try {
-                $startTime = microtime(true);
-                $startMemory = memory_get_usage();
-
-                $service = $this->makeTransient($id);
-                $service = $this->applyDecorators($id, $service);
-
-                if ($this->debugInfo->isEnabled()) {
-                    $time = microtime(true) - $startTime;
-                    $memory = memory_get_usage() - $startMemory;
-                    $this->debugInfo->recordResolution($id, $time, $memory);
-                }
-
-                $this->eventDispatcher->dispatch(new Event\ContainerEvent(
-                    Event\ContainerEvents::AFTER_RESOLVE,
-                    $id,
-                    $service,
-                    microtime(true) - $startTime,
-                ));
-
-                return $service;
+                return $this->resolveService($id, fn() => $this->makeTransient($id));
             } catch (ContainerExceptionInterface $exception) {
                 throw $exception;
             } catch (Throwable $exception) {
@@ -166,53 +147,15 @@ class Container implements ContainerInterface
         }
 
         if ($this->factoryStorage->has($id)) {
-            $startTime = microtime(true);
-            $startMemory = memory_get_usage();
-
             $factory = $this->factoryStorage->get($id);
-            /** @var object */
-            $service = $factory($this);
-            $service = $this->applyDecorators($id, $service);
-            $this->serviceStorage->set($id, $service);
-
-            if ($this->debugInfo->isEnabled()) {
-                $time = microtime(true) - $startTime;
-                $memory = memory_get_usage() - $startMemory;
-                $this->debugInfo->recordResolution($id, $time, $memory);
-            }
-
-            $this->eventDispatcher->dispatch(new Event\ContainerEvent(
-                Event\ContainerEvents::AFTER_RESOLVE,
-                $id,
-                $service,
-                microtime(true) - $startTime,
-            ));
-
-            return $service;
+            return $this->resolveService($id, function () use ($factory): object {
+                /** @var object */
+                return $factory($this);
+            }, true);
         }
 
         try {
-            $startTime = microtime(true);
-            $startMemory = memory_get_usage();
-
-            $service = $this->make($id);
-            $service = $this->applyDecorators($id, $service);
-            $this->serviceStorage->set($id, $service);
-
-            if ($this->debugInfo->isEnabled()) {
-                $time = microtime(true) - $startTime;
-                $memory = memory_get_usage() - $startMemory;
-                $this->debugInfo->recordResolution($id, $time, $memory);
-            }
-
-            $this->eventDispatcher->dispatch(new Event\ContainerEvent(
-                Event\ContainerEvents::AFTER_RESOLVE,
-                $id,
-                $service,
-                microtime(true) - $startTime,
-            ));
-
-            return $service;
+            return $this->resolveService($id, fn() => $this->make($id), true);
         } catch (ContainerExceptionInterface $exception) {
             throw $exception;
         } catch (Throwable $exception) {
@@ -580,6 +523,35 @@ class Container implements ContainerInterface
             }
             $service = $decorated;
         }
+
+        return $service;
+    }
+
+    private function resolveService(string $id, callable $resolver, bool $cache = false): object
+    {
+        $startTime = microtime(true);
+        $startMemory = memory_get_usage();
+
+        /** @var object $service */
+        $service = $resolver();
+        $service = $this->applyDecorators($id, $service);
+
+        if ($cache) {
+            $this->serviceStorage->set($id, $service);
+        }
+
+        if ($this->debugInfo->isEnabled()) {
+            $time = microtime(true) - $startTime;
+            $memory = memory_get_usage() - $startMemory;
+            $this->debugInfo->recordResolution($id, $time, $memory);
+        }
+
+        $this->eventDispatcher->dispatch(new Event\ContainerEvent(
+            Event\ContainerEvents::AFTER_RESOLVE,
+            $id,
+            $service,
+            microtime(true) - $startTime,
+        ));
 
         return $service;
     }
