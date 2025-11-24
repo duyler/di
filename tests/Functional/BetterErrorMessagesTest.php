@@ -107,6 +107,90 @@ class BetterErrorMessagesTest extends TestCase
         $this->assertStringContainsString('Example:', $error);
         $this->assertStringContainsString('ConcreteImplementation', $error);
     }
+
+    #[Test]
+    public function not_found_exception_with_no_similar_services(): void
+    {
+        $container = new Container();
+
+        try {
+            $container->get('CompletelyUniqueServiceName12345');
+            $this->fail('Expected NotFoundException');
+        } catch (NotFoundException $exception) {
+            $message = $exception->getMessage();
+            $this->assertStringContainsString('not found', $message);
+            $this->assertStringContainsString('Possible solutions:', $message);
+        }
+    }
+
+    #[Test]
+    public function not_found_exception_uses_levenshtein_for_suggestions(): void
+    {
+        $container = new Container();
+        $container->set(new BetterErrorMyService());
+
+        try {
+            $container->get('Duyler\DI\Tests\Functional\BetterErrorMyServce');
+            $this->fail('Expected NotFoundException');
+        } catch (NotFoundException $exception) {
+            $message = $exception->getMessage();
+            $this->assertStringContainsString('Did you mean one of these?', $message);
+            $this->assertStringContainsString('BetterErrorMyService', $message);
+        }
+    }
+
+    #[Test]
+    public function circular_reference_with_empty_chain(): void
+    {
+        $config = new ContainerConfig();
+        $config->withBind([SelfDependentService::class => SelfDependentService::class]);
+
+        $container = new Container($config);
+
+        try {
+            $container->get(SelfDependentService::class);
+            $this->fail('Expected CircularReferenceException');
+        } catch (CircularReferenceException $exception) {
+            $message = $exception->getMessage();
+            $this->assertStringContainsString('Circular reference detected', $message);
+            $this->assertStringContainsString('SelfDependentService', $message);
+        }
+    }
+
+    #[Test]
+    public function multiple_suggestions_sorted_by_distance(): void
+    {
+        $container = new Container();
+        $container->set(new LoggerService());
+        $container->set(new LogService());
+        $container->set(new LogHandler());
+
+        try {
+            $container->get('Duyler\DI\Tests\Functional\Logger');
+            $this->fail('Expected NotFoundException');
+        } catch (NotFoundException $exception) {
+            $message = $exception->getMessage();
+            $this->assertStringContainsString('Did you mean one of these?', $message);
+        }
+    }
+
+    #[Test]
+    public function container_get_available_services_includes_all_types(): void
+    {
+        $config = new ContainerConfig();
+        $config->withBind([AvailableInterface::class => AvailableImplementation::class]);
+
+        $container = new Container($config);
+        $container->set(new DirectService());
+
+        try {
+            $container->get('NonExistent');
+            $this->fail('Expected NotFoundException');
+        } catch (NotFoundException $exception) {
+            $message = $exception->getMessage();
+            $this->assertStringContainsString('Possible solutions:', $message);
+        }
+    }
 }
 
 class BetterErrorService1 {}
@@ -128,3 +212,22 @@ class BetterErrorServiceWithMissingDep
 }
 
 interface BetterErrorTestInterface {}
+
+class BetterErrorMyService {}
+
+class SelfDependentService
+{
+    public function __construct(SelfDependentService $self) {}
+}
+
+class LoggerService {}
+
+class LogService {}
+
+class LogHandler {}
+
+interface AvailableInterface {}
+
+class AvailableImplementation implements AvailableInterface {}
+
+class DirectService {}
