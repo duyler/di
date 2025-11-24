@@ -426,34 +426,40 @@ class Container implements ContainerInterface
         return array_unique($services);
     }
 
+    #[Override]
     public function enableDebug(): self
     {
         $this->debugInfo->enable();
         return $this;
     }
 
+    #[Override]
     public function disableDebug(): self
     {
         $this->debugInfo->disable();
         return $this;
     }
 
+    #[Override]
     public function isDebugEnabled(): bool
     {
         return $this->debugInfo->isEnabled();
     }
 
+    #[Override]
     public function getDebugInfo(): DebugInfo
     {
         return $this->debugInfo;
     }
 
+    #[Override]
     public function on(string $eventName, callable $listener): self
     {
         $this->eventDispatcher->addListener($eventName, $listener);
         return $this;
     }
 
+    #[Override]
     public function getEventDispatcher(): Event\EventDispatcher
     {
         return $this->eventDispatcher;
@@ -462,6 +468,7 @@ class Container implements ContainerInterface
     /**
      * @param class-string $serviceId
      */
+    #[Override]
     public function decorate(string $serviceId, callable $decorator): self
     {
         $this->decoratorStorage->add($serviceId, $decorator);

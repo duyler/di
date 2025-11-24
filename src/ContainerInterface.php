@@ -61,4 +61,21 @@ interface ContainerInterface extends PsrContainerInterface
      * @return array<object>
      */
     public function tagged(string $tag): array;
+
+    public function enableDebug(): self;
+
+    public function disableDebug(): self;
+
+    public function isDebugEnabled(): bool;
+
+    public function getDebugInfo(): DebugInfo;
+
+    public function on(string $eventName, callable $listener): self;
+
+    public function getEventDispatcher(): Event\EventDispatcher;
+
+    /**
+     * @param class-string $serviceId
+     */
+    public function decorate(string $serviceId, callable $decorator): self;
 }
