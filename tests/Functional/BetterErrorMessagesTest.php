@@ -11,6 +11,7 @@ use Duyler\DI\Exception\NotFoundException;
 use Exception;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Throwable;
 
 class BetterErrorMessagesTest extends TestCase
 {
@@ -191,6 +192,125 @@ class BetterErrorMessagesTest extends TestCase
             $this->assertStringContainsString('Possible solutions:', $message);
         }
     }
+
+    #[Test]
+    public function not_found_exception_with_chain(): void
+    {
+        $container = new Container();
+
+        try {
+            $container->get(ServiceWithChainDep::class);
+            $this->fail('Expected exception');
+        } catch (Throwable $exception) {
+            $message = $exception->getMessage();
+            $this->assertStringContainsString('ServiceWithChainDep', $message);
+        }
+    }
+
+    #[Test]
+    public function circular_reference_with_chain(): void
+    {
+        $container = new Container();
+
+        try {
+            $container->get(CircularChainA::class);
+            $this->fail('Expected CircularReferenceException');
+        } catch (CircularReferenceException $exception) {
+            $message = $exception->getMessage();
+            $this->assertStringContainsString('Circular reference detected', $message);
+        }
+    }
+
+    #[Test]
+    public function invalid_binding_with_non_interface(): void
+    {
+        $config = new ContainerConfig();
+        $config->withBind([BetterErrorConcreteClass::class => BetterErrorAnotherConcreteClass::class]);
+
+        $container = new Container($config);
+        $errors = $container->compile();
+
+        $this->assertNotEmpty($errors);
+        $this->assertStringContainsString('must be an interface or abstract class', $errors[0]);
+    }
+
+    #[Test]
+    public function invalid_binding_interface_not_implemented(): void
+    {
+        $config = new ContainerConfig();
+        $config->withBind([BetterErrorValidInterface::class => BetterErrorWrongImplementation::class]);
+
+        $container = new Container($config);
+        $errors = $container->compile();
+
+        $this->assertNotEmpty($errors);
+        $this->assertStringContainsString('does not implement', $errors[0]);
+    }
+
+    #[Test]
+    public function invalid_binding_abstract_not_extended(): void
+    {
+        $config = new ContainerConfig();
+        $config->withBind([BetterErrorAbstractBase::class => BetterErrorNotExtendingClass::class]);
+
+        $container = new Container($config);
+        $errors = $container->compile();
+
+        $this->assertNotEmpty($errors);
+        $this->assertStringContainsString('does not extend', $errors[0]);
+    }
+
+    #[Test]
+    public function not_found_with_partial_match_suggestions(): void
+    {
+        $container = new Container();
+        $container->set(new UserService());
+        $container->set(new UserRepository());
+        $container->set(new UserController());
+
+        try {
+            $container->get('Duyler\DI\Tests\Functional\User');
+            $this->fail('Expected NotFoundException');
+        } catch (NotFoundException $exception) {
+            $message = $exception->getMessage();
+            $this->assertStringContainsString('Did you mean one of these?', $message);
+        }
+    }
+
+    #[Test]
+    public function compile_errors_multiple_bindings(): void
+    {
+        $config = new ContainerConfig();
+        $config->withBind([
+            'NonExistent1' => 'NonExistent2',
+            'NonExistent3' => 'NonExistent4',
+        ]);
+
+        $container = new Container($config);
+        $errors = $container->compile();
+
+        $this->assertGreaterThanOrEqual(2, count($errors));
+    }
+
+    #[Test]
+    public function exception_message_format_consistency(): void
+    {
+        $container = new Container();
+
+        try {
+            $container->get('TestService');
+            $this->fail('Expected NotFoundException');
+        } catch (NotFoundException $exception) {
+            $message = $exception->getMessage();
+            $this->assertStringContainsString('Service', $message);
+            $this->assertStringContainsString('not found', $message);
+            $this->assertStringContainsString('Possible solutions:', $message);
+            $this->assertStringContainsString('1.', $message);
+            $this->assertStringContainsString('2.', $message);
+            $this->assertStringContainsString('3.', $message);
+            $this->assertStringContainsString('4.', $message);
+        }
+    }
 }
 
 class BetterErrorService1 {}
@@ -231,3 +351,43 @@ interface AvailableInterface {}
 class AvailableImplementation implements AvailableInterface {}
 
 class DirectService {}
+
+interface MissingChainInterface {}
+
+class ServiceWithChainDep
+{
+    public function __construct(MissingChainInterface $dep) {}
+}
+
+class CircularChainA
+{
+    public function __construct(CircularChainB $b) {}
+}
+
+class CircularChainB
+{
+    public function __construct(CircularChainC $c) {}
+}
+
+class CircularChainC
+{
+    public function __construct(CircularChainA $a) {}
+}
+
+class BetterErrorConcreteClass {}
+
+class BetterErrorAnotherConcreteClass {}
+
+interface BetterErrorValidInterface {}
+
+class BetterErrorWrongImplementation {}
+
+abstract class BetterErrorAbstractBase {}
+
+class BetterErrorNotExtendingClass {}
+
+class UserService {}
+
+class UserRepository {}
+
+class UserController {}
