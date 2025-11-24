@@ -23,6 +23,8 @@ class ContainerConfig
 
     private bool $debugMode = false;
 
+    private bool $autoTagging = false;
+
     /** @param array<string, string> $bind */
     public function withBind(array $bind): ContainerConfig
     {
@@ -112,5 +114,16 @@ class ContainerConfig
     public function isDebugMode(): bool
     {
         return $this->debugMode;
+    }
+
+    public function withAutoTagging(bool $enabled = true): ContainerConfig
+    {
+        $this->autoTagging = $enabled;
+        return $this;
+    }
+
+    public function isAutoTagging(): bool
+    {
+        return $this->autoTagging;
     }
 }

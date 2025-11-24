@@ -24,6 +24,10 @@ A modern, flexible, and type-safe dependency injection container for PHP applica
 - Compile-time dependency validation
 - Enhanced error messages with suggestions and context
 - Debug mode with profiling and statistics
+- Attribute-based configuration (PHP 8+ attributes)
+- Auto-tagging by interface
+- Event system with lifecycle hooks
+- Service decorators for aspect-oriented programming
 
 ## Installation
 
@@ -394,6 +398,178 @@ Debug mode features:
 - Find most frequently resolved services
 - Complete resolution log with timestamps
 - Minimal overhead when disabled
+
+### Attribute-Based Configuration
+
+Use PHP 8+ attributes to configure services declaratively:
+
+```php
+use Duyler\DI\Attribute\Singleton;
+use Duyler\DI\Attribute\Transient;
+use Duyler\DI\Attribute\Tag;
+use Duyler\DI\Attribute\Bind;
+
+#[Singleton]
+class CachedUserRepository
+{
+}
+
+#[Transient]
+class RequestHandler
+{
+}
+
+#[Tag(['logger', 'monitor'])]
+class FileLogger
+{
+}
+
+#[Bind(LoggerInterface::class)]
+class ConsoleLogger implements LoggerInterface
+{
+}
+
+$container = new Container();
+$logger = $container->get(LoggerInterface::class);
+```
+
+Attributes work seamlessly with all container features.
+
+### Auto-Tagging by Interface
+
+Automatically tag services by their implemented interfaces:
+
+```php
+use Duyler\DI\Container;
+use Duyler\DI\ContainerConfig;
+
+interface EventListenerInterface {}
+
+class UserListener implements EventListenerInterface {}
+class OrderListener implements EventListenerInterface {}
+
+$config = new ContainerConfig();
+$config->withAutoTagging(true);
+
+$container = new Container($config);
+
+$container->get(UserListener::class);
+$container->get(OrderListener::class);
+
+$listeners = $container->tagged(EventListenerInterface::class);
+```
+
+Auto-tagging eliminates manual tag registration for interface-based grouping.
+
+### Event System
+
+Hook into container lifecycle events:
+
+```php
+use Duyler\DI\Container;
+use Duyler\DI\Event\ContainerEvents;
+
+$container = new Container();
+
+$container->on(ContainerEvents::BEFORE_RESOLVE, function ($event) {
+    echo "Resolving: {$event->serviceId}\n";
+});
+
+$container->on(ContainerEvents::AFTER_RESOLVE, function ($event) {
+    echo "Resolved: {$event->serviceId} in {$event->time}s\n";
+});
+
+$container->on(ContainerEvents::BEFORE_FINALIZE, function ($event) {
+    echo "Starting finalization\n";
+});
+
+$container->on(ContainerEvents::AFTER_FINALIZE, function ($event) {
+    echo "Finalization complete\n";
+});
+
+$service = $container->get(MyService::class);
+$container->finalize();
+```
+
+Events are perfect for logging, monitoring, and debugging.
+
+### Service Decorators
+
+Wrap services with additional functionality using decorators:
+
+```php
+use Duyler\DI\Container;
+
+interface CacheInterface
+{
+    public function get(string $key): mixed;
+}
+
+class RedisCache implements CacheInterface
+{
+    public function get(string $key): mixed
+    {
+        return 'value from Redis';
+    }
+}
+
+class CachedDecorator implements CacheInterface
+{
+    public function __construct(private CacheInterface $inner) {}
+
+    public function get(string $key): mixed
+    {
+        echo "Cache hit check\n";
+        return $this->inner->get($key);
+    }
+}
+
+$container = new Container();
+
+$container->decorate(CacheInterface::class, fn($service, $c) => new CachedDecorator($service));
+
+$container->bind([CacheInterface::class => RedisCache::class]);
+$cache = $container->get(CacheInterface::class);
+```
+
+Decorators enable aspect-oriented programming patterns like logging, caching, and validation.
+
+## Roadmap
+
+Future planned features:
+
+### Container Compilation
+
+Pre-compile dependency resolution for maximum performance:
+
+- Generate optimized PHP code for service instantiation
+- Eliminate reflection overhead in production
+- Cache compiled container configuration
+- Warmup command for production deployments
+
+Benefits: 5-10x faster service resolution.
+
+### Lazy Loading with Proxies
+
+Defer service instantiation until first use:
+
+- Generate proxy classes for services
+- Automatic proxy generation for interfaces
+- Transparent lazy loading without code changes
+- Integration with existing scopes
+
+Benefits: Reduced memory usage and faster bootstrap.
+
+### Container Freeze
+
+Lock container configuration after initialization:
+
+- Prevent runtime modifications in production
+- Improve security by disabling dynamic registration
+- Performance optimizations for immutable containers
+- Development/production mode switching
+
+Benefits: Enhanced security and performance.
 
 ## Contributing
 

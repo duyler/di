@@ -22,6 +22,7 @@ use function interface_exists;
 use Override;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionClass;
+use RuntimeException;
 use Throwable;
 
 class Container implements ContainerInterface
@@ -38,12 +39,17 @@ class Container implements ContainerInterface
     private readonly FactoryStorage $factoryStorage;
     private readonly TagStorage $tagStorage;
     private readonly DebugInfo $debugInfo;
+    private readonly AttributeReader $attributeReader;
+    private readonly Event\EventDispatcher $eventDispatcher;
+    private readonly Storage\DecoratorStorage $decoratorStorage;
 
     /** @var array<string, array<string, array<string, string>>> */
     private array $dependenciesTree = [];
 
     /** @var array<string, callable>  */
     private array $finalizers = [];
+
+    private bool $autoTagging = false;
 
     public function __construct(
         ?ContainerConfig $containerConfig = null,
@@ -57,11 +63,16 @@ class Container implements ContainerInterface
         $this->factoryStorage = new FactoryStorage();
         $this->tagStorage = new TagStorage();
         $this->debugInfo = new DebugInfo();
+        $this->attributeReader = new AttributeReader();
+        $this->eventDispatcher = new Event\EventDispatcher();
+        $this->decoratorStorage = new Storage\DecoratorStorage();
         $this->containerService = new ContainerService($this);
 
         if ($containerConfig?->isDebugMode()) {
             $this->debugInfo->enable();
         }
+
+        $this->autoTagging = $containerConfig?->isAutoTagging() ?? false;
 
         $this->injector = new Injector(
             serviceStorage: $this->serviceStorage,
@@ -98,7 +109,22 @@ class Container implements ContainerInterface
     #[Override]
     public function get(string $id): mixed
     {
-        $scope = $this->scopeStorage->get($id);
+        $this->eventDispatcher->dispatch(new Event\ContainerEvent(Event\ContainerEvents::BEFORE_RESOLVE, $id));
+
+        if (class_exists($id)) {
+            $this->applyAttributes($id);
+        }
+
+        $resolvedId = $id;
+        if (interface_exists($id)) {
+            $bound = $this->dependencyMapper->getClassMap()[$id] ?? null;
+            if ($bound !== null && class_exists($bound)) {
+                $this->applyAttributes($bound);
+                $resolvedId = $bound;
+            }
+        }
+
+        $scope = $this->scopeStorage->get($resolvedId);
 
         if ($scope === Scope::Transient) {
             try {
@@ -106,12 +132,20 @@ class Container implements ContainerInterface
                 $startMemory = memory_get_usage();
 
                 $service = $this->makeTransient($id);
+                $service = $this->applyDecorators($id, $service);
 
                 if ($this->debugInfo->isEnabled()) {
                     $time = microtime(true) - $startTime;
                     $memory = memory_get_usage() - $startMemory;
                     $this->debugInfo->recordResolution($id, $time, $memory);
                 }
+
+                $this->eventDispatcher->dispatch(new Event\ContainerEvent(
+                    Event\ContainerEvents::AFTER_RESOLVE,
+                    $id,
+                    $service,
+                    microtime(true) - $startTime,
+                ));
 
                 return $service;
             } catch (ContainerExceptionInterface $exception) {
@@ -122,7 +156,13 @@ class Container implements ContainerInterface
         }
 
         if ($this->has($id)) {
-            return $this->serviceStorage->get($id);
+            $service = $this->serviceStorage->get($id);
+            $this->eventDispatcher->dispatch(new Event\ContainerEvent(
+                Event\ContainerEvents::AFTER_RESOLVE,
+                $id,
+                $service,
+            ));
+            return $service;
         }
 
         if ($this->factoryStorage->has($id)) {
@@ -132,6 +172,7 @@ class Container implements ContainerInterface
             $factory = $this->factoryStorage->get($id);
             /** @var object */
             $service = $factory($this);
+            $service = $this->applyDecorators($id, $service);
             $this->serviceStorage->set($id, $service);
 
             if ($this->debugInfo->isEnabled()) {
@@ -139,6 +180,13 @@ class Container implements ContainerInterface
                 $memory = memory_get_usage() - $startMemory;
                 $this->debugInfo->recordResolution($id, $time, $memory);
             }
+
+            $this->eventDispatcher->dispatch(new Event\ContainerEvent(
+                Event\ContainerEvents::AFTER_RESOLVE,
+                $id,
+                $service,
+                microtime(true) - $startTime,
+            ));
 
             return $service;
         }
@@ -148,12 +196,21 @@ class Container implements ContainerInterface
             $startMemory = memory_get_usage();
 
             $service = $this->make($id);
+            $service = $this->applyDecorators($id, $service);
+            $this->serviceStorage->set($id, $service);
 
             if ($this->debugInfo->isEnabled()) {
                 $time = microtime(true) - $startTime;
                 $memory = memory_get_usage() - $startMemory;
                 $this->debugInfo->recordResolution($id, $time, $memory);
             }
+
+            $this->eventDispatcher->dispatch(new Event\ContainerEvent(
+                Event\ContainerEvents::AFTER_RESOLVE,
+                $id,
+                $service,
+                microtime(true) - $startTime,
+            ));
 
             return $service;
         } catch (ContainerExceptionInterface $exception) {
@@ -303,6 +360,8 @@ class Container implements ContainerInterface
     #[Override]
     public function finalize(): self
     {
+        $this->eventDispatcher->dispatch(new Event\ContainerEvent(Event\ContainerEvents::BEFORE_FINALIZE));
+
         foreach ($this->serviceStorage->getAll() as $className => $service) {
             if ($this->reflectionStorage->has($className)) {
                 $reflection = $this->reflectionStorage->get($className);
@@ -337,6 +396,8 @@ class Container implements ContainerInterface
                 $finalizer($service);
             }
         }
+
+        $this->eventDispatcher->dispatch(new Event\ContainerEvent(Event\ContainerEvents::AFTER_FINALIZE));
 
         return $this;
     }
@@ -442,5 +503,84 @@ class Container implements ContainerInterface
     public function getDebugInfo(): DebugInfo
     {
         return $this->debugInfo;
+    }
+
+    public function on(string $eventName, callable $listener): self
+    {
+        $this->eventDispatcher->addListener($eventName, $listener);
+        return $this;
+    }
+
+    public function getEventDispatcher(): Event\EventDispatcher
+    {
+        return $this->eventDispatcher;
+    }
+
+    /**
+     * @param class-string $serviceId
+     */
+    public function decorate(string $serviceId, callable $decorator): self
+    {
+        $this->decoratorStorage->add($serviceId, $decorator);
+        return $this;
+    }
+
+    /**
+     * @param class-string $className
+     */
+    private function applyAttributes(string $className): void
+    {
+        if (!class_exists($className)) {
+            return;
+        }
+
+        $hasAttributes = $this->attributeReader->hasAttributes($className);
+
+        if (!$hasAttributes && !$this->autoTagging) {
+            return;
+        }
+
+        if ($hasAttributes) {
+            $scope = $this->attributeReader->getScope($className);
+            if ($scope !== null && !$this->scopeStorage->has($className)) {
+                $this->scopeStorage->set($className, $scope);
+            }
+
+            $tags = $this->attributeReader->getTags($className);
+            if (!empty($tags)) {
+                $this->tagStorage->tag($className, $tags);
+            }
+
+            $binding = $this->attributeReader->getBinding($className);
+            if ($binding !== null) {
+                $this->bind([$binding => $className]);
+            }
+        }
+
+        if ($this->autoTagging) {
+            $interfaces = $this->attributeReader->getInterfaces($className);
+            if (!empty($interfaces)) {
+                $this->tagStorage->tag($className, $interfaces);
+            }
+        }
+    }
+
+    private function applyDecorators(string $serviceId, object $service): object
+    {
+        if (!$this->decoratorStorage->has($serviceId)) {
+            return $service;
+        }
+
+        $decorators = $this->decoratorStorage->get($serviceId);
+
+        foreach ($decorators as $decorator) {
+            $decorated = $decorator($service, $this);
+            if (!is_object($decorated)) {
+                throw new RuntimeException("Decorator for {$serviceId} must return an object");
+            }
+            $service = $decorated;
+        }
+
+        return $service;
     }
 }
