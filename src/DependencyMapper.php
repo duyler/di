@@ -8,6 +8,8 @@ use Duyler\DI\Exception\CircularReferenceException;
 use Duyler\DI\Exception\InterfaceBindNotFoundException;
 use Duyler\DI\Exception\InterfaceMapNotFoundException;
 use Duyler\DI\Exception\InvalidBindingException;
+use Duyler\DI\Exception\ServiceNotCreatedException;
+use Duyler\DI\Exception\UnsupportedTypeException;
 use Duyler\DI\Provider\ProviderInterface;
 use Duyler\DI\Storage\ProviderArgumentsStorage;
 use Duyler\DI\Storage\ProviderFactoryServiceStorage;
@@ -15,8 +17,8 @@ use Duyler\DI\Storage\ProviderStorage;
 use Duyler\DI\Storage\ReflectionStorage;
 use Duyler\DI\Storage\ServiceStorage;
 use ReflectionClass;
-use ReflectionException;
 use ReflectionMethod;
+use ReflectionNamedType;
 
 final class DependencyMapper
 {
@@ -40,7 +42,7 @@ final class DependencyMapper
 
     /**
      * @param array<string, string> $classMap
-     */
+    */
     public function bind(array $classMap): void
     {
         $this->classMap = $classMap + $this->classMap;
@@ -48,7 +50,7 @@ final class DependencyMapper
 
     /**
      * @return array<string, string>
-     */
+    */
     public function getClassMap(): array
     {
         return $this->classMap;
@@ -56,7 +58,7 @@ final class DependencyMapper
 
     /**
      * @return array<string>
-     */
+    */
     public function validateBindings(): array
     {
         $errors = [];
@@ -75,7 +77,7 @@ final class DependencyMapper
 
     /**
      * @throws InterfaceBindNotFoundException
-     */
+    */
     public function getBind(string $interface): string
     {
         if ($this->providerStorage->has($interface)) {
@@ -86,17 +88,35 @@ final class DependencyMapper
             }
         }
 
-        return $this->classMap[$interface] ?? throw new InterfaceBindNotFoundException($interface);
+        $implementation = $this->classMap[$interface] ?? throw new InterfaceBindNotFoundException($interface);
+        $this->validateBinding($interface, $implementation);
+
+        return $implementation;
+    }
+
+    public function assertBindingValid(string $interface, string $implementation): void
+    {
+        $this->validateBinding($interface, $implementation);
     }
 
     /**
-     * @return array<string, string>
-     */
+     * @return array<string, array<string, string>>
+    */
     public function resolve(string $className): array
     {
-        $this->dependencies = [];
-        $this->resolutionStack = [];
+        $isNested = $this->resolutionStack !== [];
+
+        if (!$isNested) {
+            $this->dependencies = [];
+            $this->resolutionStack = [];
+        }
+
+        $dependenciesBefore = $this->dependencies;
         $this->prepareDependencies($className);
+
+        if ($isNested) {
+            return array_diff_key($this->dependencies, $dependenciesBefore);
+        }
 
         return $this->dependencies;
     }
@@ -126,6 +146,16 @@ final class DependencyMapper
                     $service = $provider->factory($this->containerService);
 
                     if (null !== $service) {
+                        if (!$service instanceof $className) {
+                            throw new ServiceNotCreatedException(
+                                $className,
+                                sprintf(
+                                    'Provider returned "%s" which is not an instance of "%s"',
+                                    $service::class,
+                                    $className,
+                                ),
+                            );
+                        }
                         $this->dependencies[$className] = [];
                         $this->providerFactoryServiceStorage->add($className, $service);
                         return;
@@ -143,9 +173,6 @@ final class DependencyMapper
         }
     }
 
-    /**
-     * @psalm-suppress ArgumentTypeCoercion
-     */
     private function buildDependencies(ReflectionMethod $constructor, string $className): void
     {
         foreach ($constructor->getParameters() as $param) {
@@ -155,13 +182,15 @@ final class DependencyMapper
                 continue;
             }
 
-            /** @psalm-suppress UndefinedMethod */
-            $paramClassName = (string) $type->getName();
+            if (!$type instanceof ReflectionNamedType) {
+                throw new UnsupportedTypeException($className, $param->getName(), $type->__toString());
+            }
 
-            if (false === class_exists($paramClassName)
-                && false === interface_exists($paramClassName)
-                || enum_exists($paramClassName)
-            ) {
+            $paramClassName = $type->getName();
+
+            $isClassLike = class_exists($paramClassName) || interface_exists($paramClassName);
+
+            if (!$isClassLike || enum_exists($paramClassName)) {
                 continue;
             }
 
@@ -199,19 +228,25 @@ final class DependencyMapper
 
     /**
      * @throws InterfaceMapNotFoundException
-     */
+    */
     private function prepareInterface(ReflectionClass $interface, string $className, string $depArgName): void
     {
         $depInterfaceName = $interface->getName();
 
         if ($this->providerStorage->has($className)) {
             $provider = $this->providerStorage->get($className);
-            $this->classMap[$depInterfaceName] ??= $provider->bind()[$depInterfaceName] ?? null;
+            $bind = $provider->bind()[$depInterfaceName] ?? null;
+            if ($bind !== null) {
+                $this->classMap[$depInterfaceName] ??= $bind;
+            }
         }
 
         if ($this->providerStorage->has($depInterfaceName)) {
             $provider = $this->providerStorage->get($depInterfaceName);
-            $this->classMap[$depInterfaceName] ??= $provider->bind()[$depInterfaceName] ?? null;
+            $bind = $provider->bind()[$depInterfaceName] ?? null;
+            if ($bind !== null) {
+                $this->classMap[$depInterfaceName] ??= $bind;
+            }
         }
 
         if ($this->providerStorage->has($depInterfaceName)) {
@@ -241,22 +276,28 @@ final class DependencyMapper
     }
 
     /**
-     * @param class-string $interface
-     * @param class-string $implementation
      * @throws InvalidBindingException
-     */
+    */
     private function validateBinding(string $interface, string $implementation): void
     {
-        try {
-            $reflectionInterface = new ReflectionClass($interface);
-            $reflectionImplementation = new ReflectionClass($implementation);
-        } catch (ReflectionException $exception) {
+        if (!class_exists($interface) && !interface_exists($interface)) {
             throw new InvalidBindingException(
                 $interface,
                 $implementation,
-                $exception->getMessage(),
+                sprintf('Class "%s" does not exist', $interface),
             );
         }
+
+        if (!class_exists($implementation) && !interface_exists($implementation)) {
+            throw new InvalidBindingException(
+                $interface,
+                $implementation,
+                sprintf('Class "%s" does not exist', $implementation),
+            );
+        }
+
+        $reflectionInterface = new ReflectionClass($interface);
+        $reflectionImplementation = new ReflectionClass($implementation);
 
         if ($reflectionInterface->isInterface() && !$reflectionImplementation->implementsInterface($interface)) {
             throw new InvalidBindingException(

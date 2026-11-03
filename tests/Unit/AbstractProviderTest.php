@@ -44,7 +44,10 @@ class AbstractProviderTest extends TestCase
 
         $provider->accept($object);
 
-        $this->assertTrue(true);
+        $containerService = new ContainerService(new Container());
+        $this->assertSame([], $provider->getArguments($containerService));
+        $this->assertSame([], $provider->bind());
+        $this->assertNull($provider->finalizer());
     }
 
     #[Test]
@@ -85,7 +88,7 @@ class AbstractProviderTest extends TestCase
 
         $containerService = new ContainerService(new Container());
 
-        $this->assertEquals(['test' => 'value'], $provider->getArguments($containerService));
-        $this->assertEquals(['Interface' => 'Implementation'], $provider->bind());
+        $this->assertSame(['test' => 'value'], $provider->getArguments($containerService));
+        $this->assertSame(['Interface' => 'Implementation'], $provider->bind());
     }
 }

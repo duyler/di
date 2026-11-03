@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Duyler\DI\Tests\Functional;
 
 use Duyler\DI\Container;
+use Duyler\DI\Exception\ServiceNotCreatedException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerExceptionInterface;
 
 class ServiceDecoratorsTest extends TestCase
 {
@@ -79,6 +81,25 @@ class ServiceDecoratorsTest extends TestCase
         $service = $container->get(DecoratorTestService::class);
 
         $this->assertInstanceOf(DecoratorWrapper::class, $service);
+    }
+
+    #[Test]
+    public function decorator_returning_non_object_throws_service_not_created(): void
+    {
+        $container = new Container();
+        $container->decorate(DecoratorTestService::class, static fn(): string => 'not an object');
+
+        try {
+            $container->get(DecoratorTestService::class);
+            $this->fail('ServiceNotCreatedException expected');
+        } catch (ServiceNotCreatedException $exception) {
+            $this->assertInstanceOf(ContainerExceptionInterface::class, $exception);
+            $this->assertNull($exception->getPrevious());
+            $this->assertStringContainsString(
+                'Decorator for ' . DecoratorTestService::class . ' must return an object',
+                $exception->getMessage(),
+            );
+        }
     }
 }
 

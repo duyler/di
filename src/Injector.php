@@ -8,15 +8,19 @@ use function current;
 
 use Duyler\DI\Exception\NotFoundException;
 use Duyler\DI\Exception\ResolveDependenciesTreeException;
+use Duyler\DI\Exception\ServiceNotCreatedException;
 use Duyler\DI\Storage\ProviderArgumentsStorage;
 use Duyler\DI\Storage\ProviderFactoryServiceStorage;
 use Duyler\DI\Storage\ProviderStorage;
+use Duyler\DI\Storage\ReflectionStorage;
 use Duyler\DI\Storage\ServiceStorage;
 
 use function end;
 use function key;
 use function prev;
 
+use ReflectionClass;
+use ReflectionNamedType;
 use Throwable;
 
 final class Injector
@@ -24,14 +28,12 @@ final class Injector
     /** @var Definition[] */
     private array $externalDefinitions = [];
 
-    /** @var array<string, array<string, string>> */
-    private array $dependenciesTree = [];
-
     public function __construct(
         private readonly ServiceStorage $serviceStorage,
         private readonly ProviderStorage $providerStorage,
         private readonly ProviderArgumentsStorage $argumentsStorage,
         private readonly ProviderFactoryServiceStorage $providerFactoryServiceStorage,
+        private readonly ReflectionStorage $reflectionStorage,
     ) {}
 
     public function addDefinition(Definition $definition): void
@@ -42,33 +44,29 @@ final class Injector
     /**
      * @param array<string, array<string, string>> $dependenciesTree
      * @throws ResolveDependenciesTreeException
-     */
+    */
     public function build(string $className, array $dependenciesTree = []): void
     {
-        $this->dependenciesTree = $dependenciesTree;
-
-        if (empty($this->dependenciesTree)) {
+        if (empty($dependenciesTree)) {
             $this->instanceClass($className);
 
             return;
         }
 
-        $this->iterateDependenciesTree();
+        $this->iterateDependenciesTree($dependenciesTree);
     }
 
     /**
      * @param array<string, array<string, string>> $dependenciesTree
      * @throws ResolveDependenciesTreeException
-     */
+    */
     public function buildTransient(string $className, array $dependenciesTree = []): object
     {
-        $this->dependenciesTree = $dependenciesTree;
-
-        if (empty($this->dependenciesTree)) {
+        if (empty($dependenciesTree)) {
             return $this->createTransientInstance($className);
         }
 
-        return $this->createTransientWithDependencies($className);
+        return $this->createTransientWithDependencies($className, $dependenciesTree);
     }
 
     private function setDefinitions(string $className, object $definition): void
@@ -89,22 +87,23 @@ final class Injector
     }
 
     /**
+     * @param array<string, array<string, string>> $dependenciesTree
      * @throws ResolveDependenciesTreeException
-     */
-    private function iterateDependenciesTree(): void
+    */
+    private function iterateDependenciesTree(array $dependenciesTree): void
     {
-        $deps = end($this->dependenciesTree);
+        $deps = end($dependenciesTree);
 
         while (false !== $deps) {
             /** @var string $class */
-            $class = key($this->dependenciesTree);
+            $class = key($dependenciesTree);
 
             /** @var array<string, string> $deps */
-            $deps = current($this->dependenciesTree);
+            $deps = current($dependenciesTree);
 
-            $this->instanceClass($class, $deps);
+            $this->instanceClass($class, $deps, $dependenciesTree);
 
-            if (false === prev($this->dependenciesTree)) {
+            if (false === prev($dependenciesTree)) {
                 break;
             }
         }
@@ -112,15 +111,16 @@ final class Injector
 
     /**
      * @param array<string, string> $deps
+     * @param array<string, array<string, string>> $dependenciesTree
      * @throws NotFoundException
-     */
-    private function instanceClass(string $className, array $deps = []): void
+    */
+    private function instanceClass(string $className, array $deps = [], array $dependenciesTree = []): void
     {
         $dependencies = [];
 
         foreach ($deps as $argName => $dep) {
-            if (isset($this->dependenciesTree[$dep])) {
-                $this->instanceClass($dep, $this->dependenciesTree[$dep]);
+            if (isset($dependenciesTree[$dep])) {
+                $this->instanceClass($dep, $dependenciesTree[$dep], $dependenciesTree);
             } else {
                 $this->prepareDependencies($dep);
             }
@@ -137,8 +137,7 @@ final class Injector
 
     /**
      * @throws ResolveDependenciesTreeException
-     * @psalm-suppress InvalidStringClass
-     */
+    */
     private function prepareDependencies(string $className, array $dependencies = []): void
     {
         $arguments = $this->argumentsStorage->get($className);
@@ -148,6 +147,9 @@ final class Injector
         }
 
         if (false === $this->hasDefinition($className)) {
+            if (false === $this->providerFactoryServiceStorage->has($className)) {
+                $this->assertArgumentsSatisfiable($className, $arguments + $dependencies);
+            }
 
             try {
                 $definition = null;
@@ -157,6 +159,7 @@ final class Injector
                 }
 
                 if (null === $definition) {
+                    /** @psalm-suppress InvalidStringClass */
                     $definition = new $className(...$arguments + $dependencies);
                 }
 
@@ -179,8 +182,7 @@ final class Injector
 
     /**
      * @throws ResolveDependenciesTreeException
-     * @psalm-suppress InvalidStringClass
-     */
+    */
     private function createTransientInstance(string $className): object
     {
         $arguments = $this->argumentsStorage->get($className);
@@ -189,11 +191,16 @@ final class Injector
             $arguments = $this->externalDefinitions[$className]->arguments + $arguments;
         }
 
+        if (false === $this->providerFactoryServiceStorage->has($className)) {
+            $this->assertArgumentsSatisfiable($className, $arguments);
+        }
+
         try {
             if ($this->providerFactoryServiceStorage->has($className)) {
                 return $this->providerFactoryServiceStorage->get($className);
             }
 
+            /** @psalm-suppress InvalidStringClass */
             $instance = new $className(...$arguments);
 
             if ($this->providerStorage->has($className)) {
@@ -213,11 +220,12 @@ final class Injector
     }
 
     /**
+     * @param array<string, array<string, string>> $dependenciesTree
      * @throws ResolveDependenciesTreeException
-     */
-    private function createTransientWithDependencies(string $className): object
+    */
+    private function createTransientWithDependencies(string $className, array $dependenciesTree): object
     {
-        $targetDeps = $this->dependenciesTree[$className] ?? [];
+        $targetDeps = $dependenciesTree[$className] ?? [];
 
         if (empty($targetDeps)) {
             return $this->createTransientInstance($className);
@@ -231,8 +239,8 @@ final class Injector
                 continue;
             }
 
-            if (isset($this->dependenciesTree[$dep])) {
-                $this->instanceClass($dep, $this->dependenciesTree[$dep]);
+            if (isset($dependenciesTree[$dep])) {
+                $this->instanceClass($dep, $dependenciesTree[$dep], $dependenciesTree);
             } else {
                 $this->instanceClass($dep);
             }
@@ -248,10 +256,52 @@ final class Injector
     }
 
     /**
+     * @param string $className owner class whose constructor is checked
+     * @param array<array-key, mixed> $arguments final merged arguments of the
+     * @throws ServiceNotCreatedException when a non-variadic class-typed
+    */
+    private function assertArgumentsSatisfiable(string $className, array $arguments): void
+    {
+        if (!class_exists($className) && !enum_exists($className)) {
+            return;
+        }
+
+        if (false === $this->reflectionStorage->has($className)) {
+            $this->reflectionStorage->set($className, new ReflectionClass($className));
+        }
+
+        $constructor = $this->reflectionStorage->get($className)->getConstructor();
+
+        if (null === $constructor) {
+            return;
+        }
+
+        foreach ($constructor->getParameters() as $parameter) {
+            if ($parameter->isVariadic() || $parameter->isDefaultValueAvailable() || $parameter->allowsNull()) {
+                continue;
+            }
+
+            if (array_key_exists($parameter->getName(), $arguments)) {
+                continue;
+            }
+
+            $type = $parameter->getType();
+
+            if (!$type instanceof ReflectionNamedType || !$type->isBuiltin()) {
+                continue;
+            }
+
+            throw new ServiceNotCreatedException(
+                $className,
+                sprintf('Parameter "%s" of "%s" cannot be autowired', $parameter->getName(), $className),
+            );
+        }
+    }
+
+    /**
      * @param array<string, object> $dependencies
      * @throws ResolveDependenciesTreeException
-     * @psalm-suppress InvalidStringClass
-     */
+    */
     private function createTransientInstanceWithDeps(string $className, array $dependencies): object
     {
         $arguments = $this->argumentsStorage->get($className);
@@ -260,7 +310,10 @@ final class Injector
             $arguments = $this->externalDefinitions[$className]->arguments + $arguments;
         }
 
+        $this->assertArgumentsSatisfiable($className, $arguments + $dependencies);
+
         try {
+            /** @psalm-suppress InvalidStringClass */
             $instance = new $className(...$arguments + $dependencies);
 
             if ($this->providerStorage->has($className)) {

@@ -11,7 +11,7 @@ final readonly class Bind
 {
     /**
      * @param class-string $interface
-     */
+    */
     public function __construct(
         public string $interface,
     ) {}

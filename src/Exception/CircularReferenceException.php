@@ -11,7 +11,7 @@ class CircularReferenceException extends Exception implements ContainerException
 {
     /**
      * @param array<string> $chain
-     */
+    */
     public function __construct(string $className, string $depClassName, array $chain = [])
     {
         $message = sprintf(

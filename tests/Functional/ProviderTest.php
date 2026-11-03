@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Duyler\DI\Tests\Functional;
 
-use Duyler\DI\Attribute\Finalize;
 use Duyler\DI\Container;
 use Duyler\DI\ContainerConfig;
 use Duyler\DI\ContainerService;
@@ -63,6 +62,21 @@ class ProviderTest extends TestCase
         $service = $container->get(ArgumentServiceInterface::class);
 
         $this->assertEquals(['dependency' => 'test'], $service->getArguments());
+    }
+
+    #[Test]
+    public function reentrant_instance_of_other_class_resolves(): void
+    {
+        $this->container->addProviders([
+            ReentrantTargetService::class => ReentrantProvider::class,
+        ]);
+
+        $service = $this->container->get(ReentrantTargetService::class);
+
+        $this->assertInstanceOf(ReentrantTargetService::class, $service);
+        $this->assertInstanceOf(ReentrantDependencyService::class, $service->dependency);
+        $this->assertTrue($this->container->has(ReentrantDependencyService::class));
+        $this->assertTrue($this->container->has(ReentrantTargetService::class));
     }
 }
 
@@ -157,56 +171,6 @@ class ComplexServiceProvider implements ProviderInterface
     }
 }
 
-interface FinalizableInterface
-{
-    public function isFinalized(): bool;
-}
-
-#[Finalize]
-class FinalizableService implements FinalizableInterface
-{
-    private bool $finalized = false;
-
-    public function finalize(): void
-    {
-        $this->finalized = true;
-    }
-
-    public function isFinalized(): bool
-    {
-        return $this->finalized;
-    }
-}
-
-class FinalizableProvider implements ProviderInterface
-{
-    public function getArguments(ContainerService $containerService): array
-    {
-        return [];
-    }
-
-    public function bind(): array
-    {
-        return [
-            FinalizableInterface::class => FinalizableService::class,
-        ];
-    }
-
-    public function accept(object $definition): void {}
-
-    public function finalizer(): ?callable
-    {
-        return function (FinalizableService $service) {
-            $service->finalize();
-        };
-    }
-
-    public function factory(ContainerService $containerService): ?object
-    {
-        return new FinalizableService();
-    }
-}
-
 interface ArgumentServiceInterface
 {
     public function getArguments(): array;
@@ -261,5 +225,39 @@ class TestProviderDependency
     public function getValue(): string
     {
         return 'dependency';
+    }
+}
+
+class ReentrantTargetService
+{
+    public function __construct(public ReentrantDependencyService $dependency) {}
+}
+
+class ReentrantDependencyService {}
+
+class ReentrantProvider implements ProviderInterface
+{
+    public function getArguments(ContainerService $containerService): array
+    {
+        return [];
+    }
+
+    public function bind(): array
+    {
+        return [];
+    }
+
+    public function accept(object $definition): void {}
+
+    public function finalizer(): ?callable
+    {
+        return null;
+    }
+
+    public function factory(ContainerService $containerService): ?object
+    {
+        $dependency = $containerService->getInstance(ReentrantDependencyService::class);
+
+        return new ReentrantTargetService($dependency);
     }
 }

@@ -17,8 +17,8 @@ class DefinitionTest extends TestCase
         $arguments = ['arg1' => 'value1', 'arg2' => 'value2'];
         $definition = new Definition('TestClass', $arguments);
 
-        $this->assertEquals('TestClass', $definition->id);
-        $this->assertEquals($arguments, $definition->arguments);
+        $this->assertSame('TestClass', $definition->id);
+        $this->assertSame($arguments, $definition->arguments);
     }
 
     #[Test]
@@ -26,7 +26,7 @@ class DefinitionTest extends TestCase
     {
         $definition = new Definition('TestClass', []);
 
-        $this->assertEquals('TestClass', $definition->id);
+        $this->assertSame('TestClass', $definition->id);
         $this->assertEmpty($definition->arguments);
     }
 
@@ -35,8 +35,8 @@ class DefinitionTest extends TestCase
     {
         $definition = new Definition('TestClass', ['arg' => 'value']);
 
-        $this->assertEquals('TestClass', $definition->id);
-        $this->assertEquals(['arg' => 'value'], $definition->arguments);
+        $this->assertSame('TestClass', $definition->id);
+        $this->assertSame(['arg' => 'value'], $definition->arguments);
     }
 
     #[Test]
@@ -63,6 +63,6 @@ class DefinitionTest extends TestCase
 
         $definition = new Definition('TestClass', $arguments);
 
-        $this->assertEquals($arguments, $definition->arguments);
+        $this->assertSame($arguments, $definition->arguments);
     }
 }

@@ -10,7 +10,7 @@ final class ReflectionStorage
 {
     /**
      * @var ReflectionClass[]
-     */
+    */
     private array $reflections = [];
 
     public function get(string $reflectionClassName): ReflectionClass

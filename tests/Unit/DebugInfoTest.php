@@ -38,6 +38,18 @@ class DebugInfoTest extends TestCase
     }
 
     #[Test]
+    public function resolution_log_keeps_passed_depth(): void
+    {
+        $debugInfo = new DebugInfo();
+        $debugInfo->enable();
+        $debugInfo->recordResolution('ServiceA', 0.001, 100, 2);
+
+        $log = $debugInfo->getResolutionLog();
+
+        $this->assertSame(2, $log[0]['depth']);
+    }
+
+    #[Test]
     public function does_not_record_when_disabled(): void
     {
         $debugInfo = new DebugInfo();

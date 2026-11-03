@@ -11,7 +11,7 @@ final readonly class Tag
 {
     /**
      * @param string|array<string> $tags
-     */
+    */
     public function __construct(
         public string|array $tags,
     ) {}

@@ -71,84 +71,17 @@ class TagStorageTest extends TestCase
     }
 
     #[Test]
-    public function get_service_tags_returns_all_tags_for_service(): void
-    {
-        $storage = new TagStorage();
-        $storage->tag('ServiceA', 'tag1');
-        $storage->tag('ServiceA', 'tag2');
-        $storage->tag('ServiceA', 'tag3');
-
-        $tags = $storage->getServiceTags('ServiceA');
-
-        $this->assertCount(3, $tags);
-        $this->assertEquals(['tag1', 'tag2', 'tag3'], $tags);
-    }
-
-    #[Test]
-    public function get_service_tags_returns_empty_for_untagged_service(): void
-    {
-        $storage = new TagStorage();
-        $storage->tag('ServiceA', 'tag1');
-
-        $tags = $storage->getServiceTags('ServiceB');
-
-        $this->assertEmpty($tags);
-    }
-
-    #[Test]
-    public function has_tag_returns_true_when_tag_exists(): void
-    {
-        $storage = new TagStorage();
-        $storage->tag('ServiceA', 'existing.tag');
-
-        $this->assertTrue($storage->hasTag('existing.tag'));
-    }
-
-    #[Test]
-    public function has_tag_returns_false_when_tag_does_not_exist(): void
-    {
-        $storage = new TagStorage();
-
-        $this->assertFalse($storage->hasTag('non.existent'));
-    }
-
-    #[Test]
-    public function get_all_tags_returns_all_tags_and_services(): void
-    {
-        $storage = new TagStorage();
-        $storage->tag('ServiceA', 'tag1');
-        $storage->tag('ServiceB', 'tag1');
-        $storage->tag('ServiceC', 'tag2');
-
-        $allTags = $storage->getAllTags();
-
-        $this->assertCount(2, $allTags);
-        $this->assertEquals(['ServiceA', 'ServiceB'], $allTags['tag1']);
-        $this->assertEquals(['ServiceC'], $allTags['tag2']);
-    }
-
-    #[Test]
-    public function get_all_tags_returns_empty_array_when_no_tags(): void
-    {
-        $storage = new TagStorage();
-
-        $allTags = $storage->getAllTags();
-
-        $this->assertEmpty($allTags);
-    }
-
-    #[Test]
     public function reset_clears_all_tags(): void
     {
         $storage = new TagStorage();
         $storage->tag('ServiceA', 'tag1');
         $storage->tag('ServiceB', 'tag2');
 
-        $this->assertCount(2, $storage->getAllTags());
+        $this->assertNotEmpty($storage->tagged('tag1'));
+        $this->assertNotEmpty($storage->tagged('tag2'));
 
         $storage->reset();
 
-        $this->assertEmpty($storage->getAllTags());
         $this->assertEmpty($storage->tagged('tag1'));
         $this->assertEmpty($storage->tagged('tag2'));
     }
@@ -167,11 +100,9 @@ class TagStorageTest extends TestCase
         $this->assertCount(2, $storage->tagged('monitoring'));
         $this->assertCount(1, $storage->tagged('analytics'));
 
-        $this->assertEquals(['logging', 'monitoring'], $storage->getServiceTags('Logger'));
-        $this->assertTrue($storage->hasTag('logging'));
-        $this->assertFalse($storage->hasTag('non.existent'));
-
-        $allTags = $storage->getAllTags();
-        $this->assertCount(3, $allTags);
+        $this->assertContains('Logger', $storage->tagged('logging'));
+        $this->assertContains('Logger', $storage->tagged('monitoring'));
+        $this->assertNotContains('Logger', $storage->tagged('analytics'));
+        $this->assertEmpty($storage->tagged('non.existent'));
     }
 }

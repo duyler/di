@@ -19,6 +19,7 @@ class BetterErrorMessagesTest extends TestCase
     public function not_found_exception_includes_suggestions(): void
     {
         $container = new Container();
+        $container->enableDebug();
         $container->set(new BetterErrorService1());
         $container->set(new BetterErrorService2());
 
@@ -128,6 +129,7 @@ class BetterErrorMessagesTest extends TestCase
     public function not_found_exception_uses_levenshtein_for_suggestions(): void
     {
         $container = new Container();
+        $container->enableDebug();
         $container->set(new BetterErrorMyService());
 
         try {
@@ -162,6 +164,7 @@ class BetterErrorMessagesTest extends TestCase
     public function multiple_suggestions_sorted_by_distance(): void
     {
         $container = new Container();
+        $container->enableDebug();
         $container->set(new LoggerService());
         $container->set(new LogService());
         $container->set(new LogHandler());
@@ -264,6 +267,7 @@ class BetterErrorMessagesTest extends TestCase
     public function not_found_with_partial_match_suggestions(): void
     {
         $container = new Container();
+        $container->enableDebug();
         $container->set(new UserService());
         $container->set(new UserRepository());
         $container->set(new UserController());
@@ -311,6 +315,40 @@ class BetterErrorMessagesTest extends TestCase
             $this->assertStringContainsString('4.', $message);
         }
     }
+
+    #[Test]
+    public function not_found_hints_hidden_without_debug_mode(): void
+    {
+        $container = new Container();
+        $container->set(new HintTargetService());
+
+        try {
+            $container->get('Duyler\DI\Tests\Functional\HintTargetServic');
+            $this->fail('Expected NotFoundException');
+        } catch (NotFoundException $exception) {
+            $message = $exception->getMessage();
+            $this->assertStringContainsString('not found', $message);
+            $this->assertStringNotContainsString('Did you mean', $message);
+            $this->assertStringNotContainsString(HintTargetService::class, $message);
+        }
+    }
+
+    #[Test]
+    public function not_found_hints_shown_in_debug_mode(): void
+    {
+        $container = new Container();
+        $container->enableDebug();
+        $container->set(new HintTargetService());
+
+        try {
+            $container->get('Duyler\DI\Tests\Functional\HintTargetServic');
+            $this->fail('Expected NotFoundException');
+        } catch (NotFoundException $exception) {
+            $message = $exception->getMessage();
+            $this->assertStringContainsString('Did you mean one of these?', $message);
+            $this->assertStringContainsString(HintTargetService::class, $message);
+        }
+    }
 }
 
 class BetterErrorService1 {}
@@ -323,13 +361,6 @@ class BetterErrorCircularA
 }
 
 class InvalidBindingImplementation {}
-
-interface BetterErrorMissingInterface {}
-
-class BetterErrorServiceWithMissingDep
-{
-    public function __construct(BetterErrorMissingInterface $dep) {}
-}
 
 interface BetterErrorTestInterface {}
 
@@ -391,3 +422,5 @@ class UserService {}
 class UserRepository {}
 
 class UserController {}
+
+class HintTargetService {}

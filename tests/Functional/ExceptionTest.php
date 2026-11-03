@@ -9,7 +9,7 @@ use Duyler\DI\Exception\CircularReferenceException;
 use Duyler\DI\Exception\InterfaceBindNotFoundException;
 use Duyler\DI\Exception\InterfaceMapNotFoundException;
 use Duyler\DI\Exception\NotFoundException;
-use Duyler\DI\Exception\ResolveDependenciesTreeException;
+use Duyler\DI\Exception\ServiceNotCreatedException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -51,10 +51,17 @@ class ExceptionTest extends TestCase
     }
 
     #[Test]
-    public function resolve_dependencies_tree_exception_for_class_with_missing_dependencies(): void
+    public function service_not_created_exception_for_class_with_missing_dependencies(): void
     {
-        $this->expectException(ResolveDependenciesTreeException::class);
-        $this->container->get(ServiceWithMissingDependency::class);
+        try {
+            $this->container->get(ServiceWithMissingDependency::class);
+            $this->fail('ServiceNotCreatedException expected');
+        } catch (ServiceNotCreatedException $exception) {
+            $this->assertStringContainsString(
+                'Parameter "requiredString" of "' . ServiceWithMissingDependency::class . '" cannot be autowired',
+                $exception->getMessage(),
+            );
+        }
     }
 }
 

@@ -155,9 +155,15 @@ $container->finalize();
 ### Resetting Container
 
 ```php
-// Reset all services and providers
+// Reset runtime state
 $container->reset();
 ```
+
+Resets runtime state: services, factories, tags, decorators, event listeners,
+debug statistics, dependency trees and finalizers.
+
+Configuration survives: providers, scopes, bindings, reflection cache and
+debug mode.
 
 ### Getting Dependency Tree
 
@@ -338,6 +344,39 @@ Explains why a binding is invalid and shows the requirements that must be met, a
 
 When dependency resolution fails, shows the full dependency chain and the reason for failure with actionable solutions.
 
+### Exception Semantics
+
+- `Duyler\DI\Exception\NotFoundException` — the identifier is not resolvable.
+  Outside debug mode the message does not include "Did you mean" suggestions,
+  so internal service names are not exposed.
+- `Duyler\DI\Exception\ServiceNotCreatedException` — creation failed;
+  `getPrevious()` keeps the cause.
+- `Duyler\DI\Exception\UnsupportedTypeException` — a union or intersection
+  constructor parameter cannot be autowired.
+- `Duyler\DI\Exception\InvalidBindingException` — a binding is invalid
+  (implementation missing or incompatible with the interface).
+
+### Strict Resolution
+
+`ContainerConfig::withStrictResolution(true)` disables autowiring of unregistered
+classes: `get()` resolves an identifier only when it is explicitly registered
+via `set()`, `bind()`, `factory()` or a provider. Recommended when identifiers
+may come from untrusted input. Default: `false` (autowiring of any
+autoloadable class works as before).
+
+```php
+use Duyler\DI\Container;
+use Duyler\DI\ContainerConfig;
+
+$config = new ContainerConfig();
+$config->withStrictResolution(true);
+
+$container = new Container($config);
+
+// Unregistered class: NotFoundException
+// Registered (set/bind/factory/provider): resolves as usual
+```
+
 ### Debug Mode
 
 Enable debug mode to monitor and profile your container's dependency resolution:
@@ -404,15 +443,9 @@ Debug mode features:
 Use PHP 8+ attributes to configure services declaratively:
 
 ```php
-use Duyler\DI\Attribute\Singleton;
 use Duyler\DI\Attribute\Transient;
 use Duyler\DI\Attribute\Tag;
 use Duyler\DI\Attribute\Bind;
-
-#[Singleton]
-class CachedUserRepository
-{
-}
 
 #[Transient]
 class RequestHandler
@@ -459,7 +492,8 @@ $container->get(OrderListener::class);
 $listeners = $container->tagged(EventListenerInterface::class);
 ```
 
-Auto-tagging eliminates manual tag registration for interface-based grouping.
+Auto-tagging eliminates manual tag registration for interface-based grouping:
+a service is tagged by ALL implemented interfaces, including inherited ones.
 
 ### Event System
 
@@ -490,6 +524,11 @@ $container->on(ContainerEvents::AFTER_FINALIZE, function ($event) {
 $service = $container->get(MyService::class);
 $container->finalize();
 ```
+
+The `AFTER_RESOLVE` event dispatches on every successful `get()`. A cache hit
+dispatches once. A fresh creation dispatches twice: first with the raw service
+before decorators, then with the final decorated service — subscribers should
+treat the last event per service id as the final one.
 
 Events are perfect for logging, monitoring, and debugging.
 

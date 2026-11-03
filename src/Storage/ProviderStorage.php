@@ -28,7 +28,7 @@ final class ProviderStorage
 
     /**
      * @return array<string, ProviderInterface>
-     */
+    */
     public function getAll(): array
     {
         return $this->providers;

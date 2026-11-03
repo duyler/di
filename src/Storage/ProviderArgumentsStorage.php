@@ -6,7 +6,7 @@ namespace Duyler\DI\Storage;
 
 final class ProviderArgumentsStorage
 {
-    /** @var array<string, array>  */
+    /** @var array<string, array<string, mixed>> */
     private array $arguments = [];
 
     public function get(string $className): array
@@ -14,6 +14,7 @@ final class ProviderArgumentsStorage
         return $this->arguments[$className] ?? [];
     }
 
+    /** @param array<string, mixed> $arguments */
     public function set(string $className, array $arguments): void
     {
         $existsArguments = $this->arguments[$className] ?? [];

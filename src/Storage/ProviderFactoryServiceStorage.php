@@ -16,7 +16,7 @@ final class ProviderFactoryServiceStorage
 
     public function has(string $class): bool
     {
-        return array_key_exists($class, $this->services);
+        return isset($this->services[$class]);
     }
 
     public function get(string $class): object

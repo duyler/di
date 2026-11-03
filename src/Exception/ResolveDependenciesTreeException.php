@@ -12,7 +12,7 @@ class ResolveDependenciesTreeException extends Exception implements ContainerExc
 {
     /**
      * @param array<string> $chain
-     */
+    */
     public function __construct(
         string $className,
         string $reason,

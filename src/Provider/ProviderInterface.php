@@ -8,6 +8,8 @@ use Duyler\DI\ContainerService;
 
 interface ProviderInterface
 {
+    /** @return array<string, mixed> */
+    /** @return array<string, mixed> */
     public function getArguments(ContainerService $containerService): array;
 
     /** @return array<string, string> */

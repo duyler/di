@@ -22,7 +22,7 @@ class ContainerConfigTest extends TestCase
         $classMap = $config->getClassMap();
 
         $this->assertArrayHasKey('Interface', $classMap);
-        $this->assertEquals('Implementation', $classMap['Interface']);
+        $this->assertSame('Implementation', $classMap['Interface']);
     }
 
     #[Test]
@@ -48,7 +48,7 @@ class ContainerConfigTest extends TestCase
 
         $classMap = $config->getClassMap();
 
-        $this->assertEquals('Implementation2', $classMap['Interface']);
+        $this->assertSame('Implementation2', $classMap['Interface']);
     }
 
     #[Test]
@@ -62,7 +62,7 @@ class ContainerConfigTest extends TestCase
         $providers = $config->getProviders();
 
         $this->assertArrayHasKey('Interface', $providers);
-        $this->assertEquals('Provider', $providers['Interface']);
+        $this->assertSame('Provider', $providers['Interface']);
     }
 
     #[Test]

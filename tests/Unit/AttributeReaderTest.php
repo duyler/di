@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Duyler\DI\Tests\Unit;
 
 use Duyler\DI\Attribute\Bind;
-use Duyler\DI\Attribute\Singleton;
+use Duyler\DI\Attribute\Finalize;
 use Duyler\DI\Attribute\Tag;
 use Duyler\DI\Attribute\Transient;
 use Duyler\DI\AttributeReader;
 use Duyler\DI\Scope;
+use Duyler\DI\Storage\ReflectionStorage;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -19,7 +20,7 @@ class AttributeReaderTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->reader = new AttributeReader();
+        $this->reader = new AttributeReader(new ReflectionStorage());
     }
 
     #[Test]
@@ -28,14 +29,6 @@ class AttributeReaderTest extends TestCase
         $scope = $this->reader->getScope(AttributeTestTransientService::class);
 
         $this->assertEquals(Scope::Transient, $scope);
-    }
-
-    #[Test]
-    public function reads_singleton_scope(): void
-    {
-        $scope = $this->reader->getScope(AttributeTestSingletonService::class);
-
-        $this->assertEquals(Scope::Singleton, $scope);
     }
 
     #[Test]
@@ -112,13 +105,49 @@ class AttributeReaderTest extends TestCase
         $this->assertEquals(Scope::Transient, $scope);
         $this->assertEquals(['tag1', 'tag2'], $tags);
     }
+
+    #[Test]
+    public function reflection_is_shared_across_reader_calls(): void
+    {
+        $storage = new ReflectionStorage();
+        $reader = new AttributeReader($storage);
+
+        $reader->getScope(AttributeTestSingleTagService::class);
+        $reader->getTags(AttributeTestSingleTagService::class);
+        $reader->getBinding(AttributeTestSingleTagService::class);
+        $reader->hasAttributes(AttributeTestSingleTagService::class);
+        $reader->getInterfaces(AttributeTestSingleTagService::class);
+
+        $this->assertTrue($storage->has(AttributeTestSingleTagService::class));
+        $this->assertSame(
+            AttributeTestSingleTagService::class,
+            $storage->get(AttributeTestSingleTagService::class)->getName(),
+        );
+    }
+
+    #[Test]
+    public function has_attributes_result_is_cached_per_class(): void
+    {
+        $reader = new AttributeReader(new ReflectionStorage());
+
+        $this->assertTrue($reader->hasAttributes(AttributeTestSingleTagService::class));
+        $this->assertFalse($reader->hasAttributes(AttributeTestNoScopeService::class));
+        $this->assertTrue($reader->hasAttributes(AttributeTestSingleTagService::class));
+        $this->assertFalse($reader->hasAttributes(AttributeTestNoScopeService::class));
+    }
+
+    #[Test]
+    public function has_attributes_sees_finalize_only_class(): void
+    {
+        $this->assertTrue($this->reader->hasAttributes(AttributeTestFinalizeOnlyService::class));
+    }
 }
 
 #[Transient]
 class AttributeTestTransientService {}
 
-#[Singleton]
-class AttributeTestSingletonService {}
+#[Finalize]
+class AttributeTestFinalizeOnlyService {}
 
 class AttributeTestNoScopeService {}
 

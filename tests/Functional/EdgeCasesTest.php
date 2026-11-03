@@ -114,7 +114,7 @@ class EdgeCasesTest extends TestCase
 
         $container->finalize();
 
-        $this->assertTrue(true);
+        $this->assertFalse($container->has('NonExistentService'));
     }
 
     #[Test]

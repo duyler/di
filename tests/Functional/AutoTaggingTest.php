@@ -85,7 +85,7 @@ class AutoTaggingTest extends TestCase
 
         $container->get(AutoTagNoInterface::class);
 
-        $this->assertTrue(true);
+        $this->assertSame([], $container->tagged(AutoTagNoInterface::class));
     }
 
     #[Test]

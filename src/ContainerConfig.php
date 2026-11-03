@@ -25,6 +25,8 @@ class ContainerConfig
 
     private bool $autoTagging = false;
 
+    private bool $strictResolution = false;
+
     /** @param array<string, string> $bind */
     public function withBind(array $bind): ContainerConfig
     {
@@ -57,7 +59,7 @@ class ContainerConfig
 
     /**
      * @param string|array<string> $tags
-     */
+    */
     public function withTag(string $serviceId, string|array $tags): ContainerConfig
     {
         $this->tags[$serviceId] = $tags;
@@ -67,7 +69,7 @@ class ContainerConfig
 
     /**
      * @return array<string, string>
-     */
+    */
     public function getClassMap(): array
     {
         return $this->classMap;
@@ -75,7 +77,7 @@ class ContainerConfig
 
     /**
      * @return array<string, string>
-     */
+    */
     public function getProviders(): array
     {
         return $this->providers;
@@ -83,7 +85,7 @@ class ContainerConfig
 
     /**
      * @return array<array-key, Definition>
-     */
+    */
     public function getDefinitions(): array
     {
         return $this->definitions;
@@ -91,7 +93,7 @@ class ContainerConfig
 
     /**
      * @return array<string, Scope>
-     */
+    */
     public function getScopes(): array
     {
         return $this->scopes;
@@ -99,7 +101,7 @@ class ContainerConfig
 
     /**
      * @return array<string, string|array<string>>
-     */
+    */
     public function getTags(): array
     {
         return $this->tags;
@@ -125,5 +127,16 @@ class ContainerConfig
     public function isAutoTagging(): bool
     {
         return $this->autoTagging;
+    }
+
+    public function withStrictResolution(bool $strict = false): ContainerConfig
+    {
+        $this->strictResolution = $strict;
+        return $this;
+    }
+
+    public function isStrictResolution(): bool
+    {
+        return $this->strictResolution;
     }
 }

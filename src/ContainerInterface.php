@@ -17,17 +17,17 @@ interface ContainerInterface extends PsrContainerInterface
 
     /**
      * @param array<string, string> $classMap
-     */
+    */
     public function bind(array $classMap): self;
 
     /**
      * @param array<string, string> $providers
-     */
+    */
     public function addProviders(array $providers): self;
 
     /**
      * @return array<string, string>
-     */
+    */
     public function getClassMap(): array;
 
     public function set(object $definition): self;
@@ -36,7 +36,7 @@ interface ContainerInterface extends PsrContainerInterface
 
     /**
      * @return array<string, array<string, array<string, string>>>
-     */
+    */
     public function getDependencyTree(): array;
 
     public function reset(): self;
@@ -45,21 +45,22 @@ interface ContainerInterface extends PsrContainerInterface
 
     public function addFinalizer(string $class, callable $finalizer): self;
 
+    /** @param (callable(\Duyler\DI\Container=): object) $factory */
     public function factory(string $className, callable $factory): self;
 
     /**
      * @return array<string>
-     */
+    */
     public function compile(): array;
 
     /**
      * @param string|array<string> $tags
-     */
+    */
     public function tag(string $serviceId, string|array $tags): self;
 
     /**
      * @return array<object>
-     */
+    */
     public function tagged(string $tag): array;
 
     public function enableDebug(): self;
@@ -76,6 +77,6 @@ interface ContainerInterface extends PsrContainerInterface
 
     /**
      * @param class-string $serviceId
-     */
+    */
     public function decorate(string $serviceId, callable $decorator): self;
 }
