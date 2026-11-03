@@ -12,12 +12,11 @@ namespace Duyler\DI;
 class ContainerService
 {
     public function __construct(
-        private ContainerInterface $container,
+        private Container $container,
     ) {}
 
     public function getInstance(string $class): object
     {
-        /** @var object */
         return $this->container->get($class);
     }
 }

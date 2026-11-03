@@ -83,6 +83,7 @@ interface ContainerInterface extends PsrContainerInterface
      * creation before resolution. Not applied to transient classes: the
      * transient branch of get() runs earlier.
      */
+    /** @param (callable(\Duyler\DI\Container=): object) $factory */
     public function factory(string $className, callable $factory): self;
 
     /**

@@ -10,6 +10,7 @@ use Override;
 abstract class AbstractProvider implements ProviderInterface
 {
     #[Override]
+    /** @return array<string, mixed> */
     public function getArguments(ContainerService $containerService): array
     {
         return [];

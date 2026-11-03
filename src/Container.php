@@ -116,7 +116,7 @@ class Container implements ContainerInterface
     }
 
     #[Override]
-    public function get(string $id): mixed
+    public function get(string $id): object
     {
         try {
             $this->eventDispatcher->dispatch(new Event\ContainerEvent(Event\ContainerEvents::BEFORE_RESOLVE, $id));
@@ -198,7 +198,6 @@ class Container implements ContainerInterface
 
             try {
                 return $this->resolveService($id, function () use ($factory): object {
-                    /** @var object */
                     return $factory($this);
                 }, true);
             } catch (ContainerExceptionInterface|NotFoundExceptionInterface $exception) {
@@ -358,7 +357,6 @@ class Container implements ContainerInterface
         $tree = $this->dependenciesTree[$className];
         $this->injector->build($className, $tree);
 
-        /** @var object */
         return $this->get($className);
     }
 
@@ -469,6 +467,7 @@ class Container implements ContainerInterface
     }
 
     #[Override]
+    /** @param (callable(\Duyler\DI\Container=): object) $factory */
     public function factory(string $className, callable $factory): self
     {
         $this->factoryStorage->set($className, $factory);
@@ -518,7 +517,6 @@ class Container implements ContainerInterface
         $services = [];
 
         foreach ($serviceIds as $serviceId) {
-            /** @var object */
             $service = $this->get($serviceId);
             $services[] = $service;
         }
@@ -652,6 +650,7 @@ class Container implements ContainerInterface
         return $service;
     }
 
+    /** @param (callable(): object) $resolver */
     private function resolveService(string $id, callable $resolver, bool $cache = false): object
     {
         $startTime = microtime(true);
@@ -659,7 +658,6 @@ class Container implements ContainerInterface
         ++$this->resolveDepth;
 
         try {
-            /** @var object $service */
             $service = $resolver();
             $service = $this->applyDecorators($id, $service);
 
