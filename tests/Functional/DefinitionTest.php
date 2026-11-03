@@ -73,6 +73,33 @@ class DefinitionTest extends TestCase
     }
 
     #[Test]
+    public function scalar_parameter_with_default_is_skipped(): void
+    {
+        $container = new Container();
+        $service = $container->get(SkipScalarDefaultService::class);
+
+        $this->assertSame('default-value', $service->value);
+    }
+
+    #[Test]
+    public function nullable_parameter_with_default_is_skipped(): void
+    {
+        $container = new Container();
+        $service = $container->get(SkipNullableParameterService::class);
+
+        $this->assertNull($service->value);
+    }
+
+    #[Test]
+    public function enum_parameter_is_skipped(): void
+    {
+        $container = new Container();
+        $service = $container->get(SkipEnumDefaultService::class);
+
+        $this->assertSame(SkipUnitEnum::A, $service->unit);
+    }
+
+    #[Test]
     public function definition_with_interface_binding(): void
     {
         $this->container->bind([
@@ -97,6 +124,26 @@ class DefinitionTest extends TestCase
 interface TestDefinitionInterface {}
 
 class TestDefinitionImplementation implements TestDefinitionInterface {}
+
+enum SkipUnitEnum: string
+{
+    case A = 'a';
+}
+
+class SkipScalarDefaultService
+{
+    public function __construct(public readonly string $value = 'default-value') {}
+}
+
+class SkipNullableParameterService
+{
+    public function __construct(public readonly ?string $value = null) {}
+}
+
+class SkipEnumDefaultService
+{
+    public function __construct(public readonly SkipUnitEnum $unit = SkipUnitEnum::A) {}
+}
 
 class SimpleService
 {

@@ -29,6 +29,14 @@ final class DebugInfo
         return $this->enabled;
     }
 
+    /**
+     * @param float $time resolution time in seconds
+     * @param int $memory memory delta for the resolution
+     * @param int $depth re-entrancy depth of resolveService at the moment of
+     *     recording (resolved_at reflects the moment of recording, which
+     *     happens after resolution and decoration, not after resolution
+     *     started)
+     */
     public function recordResolution(string $serviceId, float $time, int $memory, int $depth = 0): void
     {
         if (!$this->enabled) {

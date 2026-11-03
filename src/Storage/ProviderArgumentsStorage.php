@@ -14,6 +14,10 @@ final class ProviderArgumentsStorage
         return $this->arguments[$className] ?? [];
     }
 
+    /**
+     * Merge semantics: new arguments win over old ones, old keys are kept
+     * until reset().
+     */
     public function set(string $className, array $arguments): void
     {
         $existsArguments = $this->arguments[$className] ?? [];

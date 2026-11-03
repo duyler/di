@@ -6,6 +6,7 @@ namespace Duyler\DI\Exception;
 
 use Exception;
 use Psr\Container\NotFoundExceptionInterface;
+use Throwable;
 
 class NotFoundException extends Exception implements NotFoundExceptionInterface
 {
@@ -17,6 +18,7 @@ class NotFoundException extends Exception implements NotFoundExceptionInterface
         string $className,
         array $availableServices = [],
         array $chain = [],
+        ?Throwable $previous = null,
     ) {
         $message = sprintf('Service "%s" not found in the container.', $className);
 
@@ -42,7 +44,7 @@ class NotFoundException extends Exception implements NotFoundExceptionInterface
         $message .= "\n  3. Add a service provider for '{$className}'";
         $message .= "\n  4. Use a factory: \$container->factory('{$className}', fn() => new {$className}())";
 
-        parent::__construct($message);
+        parent::__construct($message, 0, $previous);
     }
 
     /**

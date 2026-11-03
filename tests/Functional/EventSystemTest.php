@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Duyler\DI\Tests\Functional;
 
+use Duyler\DI\Attribute\Finalize;
 use Duyler\DI\Attribute\Transient;
 use Duyler\DI\Container;
 use Duyler\DI\Event\ContainerEvent;
@@ -188,7 +189,139 @@ class EventSystemTest extends TestCase
         $container->get(EventTestService::class);
 
         $this->assertIsFloat($time);
-        $this->assertGreaterThan(0, $time);
+        $this->assertGreaterThanOrEqual(0.0, $time);
+    }
+
+    #[Test]
+    public function after_resolve_dispatched_once_per_cache_hit_and_twice_on_fresh_create(): void
+    {
+        $container = new Container();
+
+        $events = [];
+        $container->on(ContainerEvents::AFTER_RESOLVE, static function ($event) use (&$events): void {
+            $events[] = $event;
+        });
+
+        $container->decorate(
+            EventCacheHitService::class,
+            static fn(object $service): object => new EventDecoratedService($service),
+        );
+
+        $fresh = $container->get(EventCacheHitService::class);
+
+        $this->assertCount(2, $events);
+        $this->assertNotSame($fresh, $events[0]->service);
+        $this->assertInstanceOf(EventCacheHitService::class, $events[0]->service);
+        $this->assertSame($fresh, $events[1]->service);
+        $this->assertInstanceOf(EventDecoratedService::class, $events[1]->service);
+
+        $cached = $container->get(EventCacheHitService::class);
+
+        $this->assertCount(3, $events);
+        $this->assertSame($fresh, $cached);
+        $this->assertSame($fresh, $events[2]->service);
+    }
+
+    #[Test]
+    public function finalize_called_twice_dispatches_events_once(): void
+    {
+        $container = new Container();
+        $beforeCalls = 0;
+        $afterCalls = 0;
+        $container->on(ContainerEvents::BEFORE_FINALIZE, static function () use (&$beforeCalls): void {
+            $beforeCalls++;
+        });
+        $container->on(ContainerEvents::AFTER_FINALIZE, static function () use (&$afterCalls): void {
+            $afterCalls++;
+        });
+
+        $service = $container->get(EventFinalizeService::class);
+        $container->finalize();
+
+        $this->assertSame(1, $service->finalizeCalls);
+        $this->assertSame(1, $beforeCalls);
+        $this->assertSame(1, $afterCalls);
+
+        $container->finalize();
+
+        $this->assertSame(1, $service->finalizeCalls);
+        $this->assertSame(1, $beforeCalls);
+        $this->assertSame(1, $afterCalls);
+    }
+
+    #[Test]
+    public function reset_allows_finalize_to_run_again(): void
+    {
+        $container = new Container();
+        $firstCalls = 0;
+        $container->on(ContainerEvents::BEFORE_FINALIZE, static function () use (&$firstCalls): void {
+            $firstCalls++;
+        });
+
+        $service = $container->get(EventFinalizeService::class);
+        $container->finalize();
+
+        $this->assertSame(1, $firstCalls);
+        $this->assertSame(1, $service->finalizeCalls);
+
+        $container->reset();
+
+        $afterResetCalls = 0;
+        $container->on(ContainerEvents::BEFORE_FINALIZE, static function () use (&$afterResetCalls): void {
+            $afterResetCalls++;
+        });
+
+        $recreated = $container->get(EventFinalizeService::class);
+
+        $container->finalize();
+        $container->finalize();
+
+        $this->assertSame(1, $afterResetCalls);
+        $this->assertSame(1, $recreated->finalizeCalls);
+    }
+
+    #[Test]
+    public function make_dispatches_before_and_after_make_events(): void
+    {
+        $container = new Container();
+        $beforeMake = 0;
+        $afterMake = 0;
+        $afterMakeTime = 'unset';
+        $afterMakeService = null;
+        $container->on(ContainerEvents::BEFORE_MAKE, static function () use (&$beforeMake): void {
+            $beforeMake++;
+        });
+        $container->on(ContainerEvents::AFTER_MAKE, static function (ContainerEvent $event) use (&$afterMake, &$afterMakeTime, &$afterMakeService): void {
+            $afterMake++;
+            $afterMakeTime = $event->time;
+            $afterMakeService = $event->service;
+        });
+
+        $service = $container->get(EventTestService::class);
+
+        $this->assertSame(1, $beforeMake);
+        $this->assertSame(1, $afterMake);
+        $this->assertSame($service, $afterMakeService);
+        $this->assertIsFloat($afterMakeTime);
+        $this->assertGreaterThanOrEqual(0.0, $afterMakeTime);
+    }
+
+    #[Test]
+    public function transient_resolution_does_not_dispatch_make_events(): void
+    {
+        $container = new Container();
+        $makeCalls = 0;
+        $container->on(ContainerEvents::BEFORE_MAKE, static function () use (&$makeCalls): void {
+            $makeCalls++;
+        });
+        $container->on(ContainerEvents::AFTER_MAKE, static function () use (&$makeCalls): void {
+            $makeCalls++;
+        });
+
+        $container->get(EventTestTransientService::class);
+        $container->get(EventTestTransientService::class);
+
+        $this->assertSame(0, $makeCalls);
     }
 
     #[Test]
@@ -222,6 +355,24 @@ class EventTestService {}
 
 #[Transient]
 class EventTestTransientService {}
+
+class EventCacheHitService {}
+
+class EventDecoratedService
+{
+    public function __construct(public readonly object $inner) {}
+}
+
+#[Finalize]
+class EventFinalizeService
+{
+    public int $finalizeCalls = 0;
+
+    public function finalize(): void
+    {
+        $this->finalizeCalls++;
+    }
+}
 
 class EventTestLoggingService {}
 

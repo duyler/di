@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Duyler\DI\Storage;
 
+/**
+ * null values are never stored here (add(string, object)), so the isset
+ * semantics of has() match every other storage.
+ */
 final class ProviderFactoryServiceStorage
 {
     /** @var array<string, object> */
@@ -16,7 +20,7 @@ final class ProviderFactoryServiceStorage
 
     public function has(string $class): bool
     {
-        return array_key_exists($class, $this->services);
+        return isset($this->services[$class]);
     }
 
     public function get(string $class): object

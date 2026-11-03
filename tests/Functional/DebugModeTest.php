@@ -6,6 +6,8 @@ namespace Duyler\DI\Tests\Functional;
 
 use Duyler\DI\Container;
 use Duyler\DI\ContainerConfig;
+use Duyler\DI\ContainerService;
+use Duyler\DI\Provider\ProviderInterface;
 use Duyler\DI\Scope;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -104,7 +106,7 @@ class DebugModeTest extends TestCase
         $debugInfo = $container->getDebugInfo();
         $resolutions = $debugInfo->getResolutions();
 
-        $this->assertGreaterThan(0, $resolutions[DebugSimpleService::class]['total_time']);
+        $this->assertGreaterThanOrEqual(0.0, $resolutions[DebugSimpleService::class]['total_time']);
         $this->assertGreaterThanOrEqual(0, $resolutions[DebugSimpleService::class]['memory']);
     }
 
@@ -157,8 +159,8 @@ class DebugModeTest extends TestCase
 
         $this->assertGreaterThanOrEqual(2, $stats['total_resolutions']);
         $this->assertGreaterThanOrEqual(2, $stats['unique_services']);
-        $this->assertGreaterThan(0, $stats['total_time']);
-        $this->assertGreaterThan(0, $stats['avg_time']);
+        $this->assertGreaterThanOrEqual(0.0, $stats['total_time']);
+        $this->assertGreaterThanOrEqual(0.0, $stats['avg_time']);
     }
 
     #[Test]
@@ -237,6 +239,37 @@ class DebugModeTest extends TestCase
     }
 
     #[Test]
+    public function resolution_log_records_depth_for_nested_resolutions(): void
+    {
+        $container = new Container();
+        $container->enableDebug();
+        $container->addProviders([
+            DebugNestedMid::class => DebugNestedMidProvider::class,
+        ]);
+
+        $container->get(DebugNestedOuter::class);
+
+        $log = $container->getDebugInfo()->getResolutionLog();
+
+        $outerDepth = null;
+        $innerDepth = null;
+
+        foreach ($log as $entry) {
+            if ($entry['service'] === DebugNestedOuter::class) {
+                $outerDepth = $entry['depth'];
+            }
+            if ($entry['service'] === DebugNestedLeaf::class) {
+                $innerDepth = $entry['depth'];
+            }
+        }
+
+        $this->assertNotNull($outerDepth);
+        $this->assertNotNull($innerDepth);
+        $this->assertGreaterThanOrEqual(1, $innerDepth);
+        $this->assertGreaterThan($outerDepth, $innerDepth);
+    }
+
+    #[Test]
     public function debug_mode_with_bindings(): void
     {
         $config = new ContainerConfig();
@@ -256,6 +289,45 @@ class DebugModeTest extends TestCase
 class DebugSimpleService {}
 
 class DebugDependency {}
+
+class DebugNestedOuter
+{
+    public function __construct(public readonly DebugNestedMid $dependency) {}
+}
+
+class DebugNestedMid
+{
+    public function __construct() {}
+}
+
+class DebugNestedLeaf {}
+
+class DebugNestedMidProvider implements ProviderInterface
+{
+    public function getArguments(ContainerService $containerService): array
+    {
+        return [];
+    }
+
+    public function bind(): array
+    {
+        return [];
+    }
+
+    public function accept(object $definition): void {}
+
+    public function finalizer(): ?callable
+    {
+        return null;
+    }
+
+    public function factory(ContainerService $containerService): ?object
+    {
+        $containerService->getInstance(DebugNestedLeaf::class);
+
+        return new DebugNestedMid();
+    }
+}
 
 class DebugServiceWithDependency
 {

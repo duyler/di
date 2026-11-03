@@ -8,8 +8,11 @@ use Duyler\DI\Exception\CircularReferenceException;
 use Duyler\DI\Exception\InvalidBindingException;
 use Duyler\DI\Exception\NotFoundException;
 use Duyler\DI\Exception\ResolveDependenciesTreeException;
+use Duyler\DI\Exception\ServiceNotCreatedException;
+use Duyler\DI\Exception\UnsupportedTypeException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerExceptionInterface;
 use RuntimeException;
 
 class ExceptionTest extends TestCase
@@ -210,5 +213,51 @@ class ExceptionTest extends TestCase
         $this->assertStringContainsString('Hint:', $circular->getMessage());
         $this->assertStringContainsString('requirements:', $invalid->getMessage());
         $this->assertStringContainsString('solutions:', $resolve->getMessage());
+    }
+
+    #[Test]
+    public function service_not_created_exception_includes_reason_and_previous(): void
+    {
+        $previous = new RuntimeException('Original error');
+        $exception = new ServiceNotCreatedException('MyService', 'Original error', $previous);
+
+        $this->assertStringContainsString('Failed to create service "MyService"', $exception->getMessage());
+        $this->assertStringContainsString('Reason: Original error', $exception->getMessage());
+        $this->assertSame($previous, $exception->getPrevious());
+        $this->assertInstanceOf(ContainerExceptionInterface::class, $exception);
+    }
+
+    #[Test]
+    public function service_not_created_exception_without_previous(): void
+    {
+        $exception = new ServiceNotCreatedException('MyService', 'Original error');
+
+        $this->assertSame('Failed to create service "MyService"' . "\n\n" . 'Reason: Original error', $exception->getMessage());
+        $this->assertNull($exception->getPrevious());
+        $this->assertInstanceOf(ContainerExceptionInterface::class, $exception);
+    }
+
+    #[Test]
+    public function unsupported_type_exception_message_names_class_parameter_and_type(): void
+    {
+        $exception = new UnsupportedTypeException('MyService', 'dep', 'A|B');
+
+        $this->assertSame(
+            'Parameter "dep" of "MyService" has unsupported type "A|B":'
+            . ' union and intersection types are not supported for autowired constructor parameters',
+            $exception->getMessage(),
+        );
+        $this->assertInstanceOf(ContainerExceptionInterface::class, $exception);
+        $this->assertNull($exception->getPrevious());
+    }
+
+    #[Test]
+    public function not_found_exception_accepts_previous(): void
+    {
+        $previous = new RuntimeException('root cause');
+        $exception = new NotFoundException('TestService', [], [], $previous);
+
+        $this->assertSame($previous, $exception->getPrevious());
+        $this->assertStringContainsString('Service "TestService" not found', $exception->getMessage());
     }
 }

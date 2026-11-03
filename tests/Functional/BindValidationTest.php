@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Duyler\DI\Tests\Functional;
 
+use Duyler\DI\Attribute\Bind;
 use Duyler\DI\Container;
 use Duyler\DI\ContainerConfig;
+use Duyler\DI\Exception\InvalidBindingException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -109,11 +111,29 @@ class BindValidationTest extends TestCase
             $errors[0],
         );
     }
+
+    #[Test]
+    public function bind_attribute_without_implementation_fails_on_resolution(): void
+    {
+        $container = new Container();
+
+        try {
+            $container->get(BindAttributeMisuse::class);
+            $this->fail('InvalidBindingException expected');
+        } catch (InvalidBindingException $exception) {
+            $this->assertStringContainsString(ValidInterface::class, $exception->getMessage());
+            $this->assertStringContainsString(BindAttributeMisuse::class, $exception->getMessage());
+        }
+    }
 }
+
 
 interface ValidInterface {}
 
 class ValidImplementation implements ValidInterface {}
+
+#[Bind(ValidInterface::class)]
+class BindAttributeMisuse {}
 
 class InvalidImplementation {}
 

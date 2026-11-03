@@ -6,6 +6,9 @@ namespace Duyler\DI\Storage;
 
 use Duyler\DI\Provider\ProviderInterface;
 
+/**
+ * Configuration storage: survives container reset().
+ */
 final class ProviderStorage
 {
     /** @var array<string, ProviderInterface> */

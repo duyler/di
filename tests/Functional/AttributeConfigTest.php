@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Duyler\DI\Tests\Functional;
 
 use Duyler\DI\Attribute\Bind;
-use Duyler\DI\Attribute\Singleton;
 use Duyler\DI\Attribute\Tag;
 use Duyler\DI\Attribute\Transient;
 use Duyler\DI\Container;
+use Duyler\DI\ContainerConfig;
+use Duyler\DI\Scope;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -26,12 +27,15 @@ class AttributeConfigTest extends TestCase
     }
 
     #[Test]
-    public function applies_singleton_scope_from_attribute(): void
+    public function applies_singleton_scope_from_configuration(): void
     {
-        $container = new Container();
+        $config = new ContainerConfig();
+        $config->withScope(AttrScopedByConfigService::class, Scope::Singleton);
 
-        $service1 = $container->get(AttrSingletonService::class);
-        $service2 = $container->get(AttrSingletonService::class);
+        $container = new Container($config);
+
+        $service1 = $container->get(AttrScopedByConfigService::class);
+        $service2 = $container->get(AttrScopedByConfigService::class);
 
         $this->assertSame($service1, $service2);
     }
@@ -118,14 +122,14 @@ class AttributeConfigTest extends TestCase
     #[Test]
     public function manual_config_overrides_attributes(): void
     {
-        $container = new Container();
+        $config = new ContainerConfig();
+        $config->withScope(AttrConfigConflictService::class, Scope::Singleton);
+        $container = new Container($config);
 
-        $container->get(AttrTransientService::class);
+        $service1 = $container->get(AttrConfigConflictService::class);
+        $service2 = $container->get(AttrConfigConflictService::class);
 
-        $service1 = $container->get(AttrTransientService::class);
-        $service2 = $container->get(AttrTransientService::class);
-
-        $this->assertNotSame($service1, $service2);
+        $this->assertSame($service1, $service2);
     }
 
     #[Test]
@@ -159,9 +163,6 @@ class AttributeConfigTest extends TestCase
 #[Transient]
 class AttrTransientService {}
 
-#[Singleton]
-class AttrSingletonService {}
-
 #[Tag('event.listener')]
 class AttrTaggedService1 {}
 
@@ -185,7 +186,11 @@ class AttrCombinedService implements AttrCombinedInterface {}
 
 class AttrDependency {}
 
-#[Singleton]
+#[Transient]
+class AttrConfigConflictService {}
+
+class AttrScopedByConfigService {}
+
 class AttrServiceWithDeps
 {
     public function __construct(public AttrDependency $dependency) {}

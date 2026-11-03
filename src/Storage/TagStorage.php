@@ -35,37 +35,8 @@ final class TagStorage
         return $this->tags[$tag] ?? [];
     }
 
-    /**
-     * @return array<string>
-     */
-    public function getServiceTags(string $serviceId): array
-    {
-        $serviceTags = [];
-
-        foreach ($this->tags as $tag => $services) {
-            if (in_array($serviceId, $services, true)) {
-                $serviceTags[] = $tag;
-            }
-        }
-
-        return $serviceTags;
-    }
-
-    public function hasTag(string $tag): bool
-    {
-        return isset($this->tags[$tag]);
-    }
-
     public function reset(): void
     {
         $this->tags = [];
-    }
-
-    /**
-     * @return array<string, array<string>>
-     */
-    public function getAllTags(): array
-    {
-        return $this->tags;
     }
 }

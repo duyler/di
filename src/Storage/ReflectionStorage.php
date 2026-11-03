@@ -6,6 +6,9 @@ namespace Duyler\DI\Storage;
 
 use ReflectionClass;
 
+/**
+ * Configuration storage: survives container reset().
+ */
 final class ReflectionStorage
 {
     /**

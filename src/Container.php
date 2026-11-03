@@ -7,6 +7,7 @@ namespace Duyler\DI;
 use Duyler\DI\Attribute\Finalize;
 use Duyler\DI\Exception\FinalizeNotImplementException;
 use Duyler\DI\Exception\NotFoundException;
+use Duyler\DI\Exception\ServiceNotCreatedException;
 use Duyler\DI\Provider\ProviderInterface;
 use Duyler\DI\Storage\FactoryStorage;
 use Duyler\DI\Storage\ProviderArgumentsStorage;
@@ -21,8 +22,8 @@ use function interface_exists;
 
 use Override;
 use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ReflectionClass;
-use RuntimeException;
 use Throwable;
 
 class Container implements ContainerInterface
@@ -49,6 +50,12 @@ class Container implements ContainerInterface
     /** @var array<string, callable>  */
     private array $finalizers = [];
 
+    private bool $finalized = false;
+
+    private int $resolveDepth = 0;
+
+    private bool $strictResolution = false;
+
     private bool $autoTagging = false;
 
     public function __construct(
@@ -63,7 +70,7 @@ class Container implements ContainerInterface
         $this->factoryStorage = new FactoryStorage();
         $this->tagStorage = new TagStorage();
         $this->debugInfo = new DebugInfo();
-        $this->attributeReader = new AttributeReader();
+        $this->attributeReader = new AttributeReader($this->reflectionStorage);
         $this->eventDispatcher = new Event\EventDispatcher();
         $this->decoratorStorage = new Storage\DecoratorStorage();
         $this->containerService = new ContainerService($this);
@@ -73,12 +80,14 @@ class Container implements ContainerInterface
         }
 
         $this->autoTagging = $containerConfig?->isAutoTagging() ?? false;
+        $this->strictResolution = $containerConfig?->isStrictResolution() ?? false;
 
         $this->injector = new Injector(
             serviceStorage: $this->serviceStorage,
             providerStorage: $this->providerStorage,
             argumentsStorage: $this->argumentsStorage,
             providerFactoryServiceStorage: $this->providerFactoryServiceStorage,
+            reflectionStorage: $this->reflectionStorage,
         );
 
         $this->dependencyMapper = new DependencyMapper(
@@ -109,7 +118,19 @@ class Container implements ContainerInterface
     #[Override]
     public function get(string $id): mixed
     {
-        $this->eventDispatcher->dispatch(new Event\ContainerEvent(Event\ContainerEvents::BEFORE_RESOLVE, $id));
+        try {
+            $this->eventDispatcher->dispatch(new Event\ContainerEvent(Event\ContainerEvents::BEFORE_RESOLVE, $id));
+        } catch (ContainerExceptionInterface|NotFoundExceptionInterface $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            throw new ServiceNotCreatedException(
+                $id,
+                $this->isDebugEnabled()
+                    ? $exception->getMessage()
+                    : 'see getPrevious() for the underlying reason',
+                $exception,
+            );
+        }
 
         if (class_exists($id)) {
             $this->applyAttributes($id);
@@ -127,40 +148,107 @@ class Container implements ContainerInterface
         $scope = $this->scopeStorage->get($resolvedId);
 
         if ($scope === Scope::Transient) {
+            if (!$this->canResolve($id, $this->strictResolution)) {
+                throw new NotFoundException($id, $this->isDebugEnabled() ? $this->getAvailableServices() : []);
+            }
+
             try {
                 return $this->resolveService($id, fn() => $this->makeTransient($id));
-            } catch (ContainerExceptionInterface $exception) {
+            } catch (ContainerExceptionInterface|NotFoundExceptionInterface $exception) {
                 throw $exception;
             } catch (Throwable $exception) {
-                throw new NotFoundException($id, $this->getAvailableServices());
+                throw new ServiceNotCreatedException(
+                    $id,
+                    $this->isDebugEnabled()
+                        ? $exception->getMessage()
+                        : 'see getPrevious() for the underlying reason',
+                    $exception,
+                );
             }
         }
 
         if ($this->has($id)) {
+            $startTime = microtime(true);
             $service = $this->serviceStorage->get($id);
-            $this->eventDispatcher->dispatch(new Event\ContainerEvent(
-                Event\ContainerEvents::AFTER_RESOLVE,
-                $id,
-                $service,
-            ));
-            return $service;
+
+            try {
+                $this->eventDispatcher->dispatch(new Event\ContainerEvent(
+                    Event\ContainerEvents::AFTER_RESOLVE,
+                    $id,
+                    $service,
+                    microtime(true) - $startTime,
+                ));
+
+                return $service;
+            } catch (ContainerExceptionInterface|NotFoundExceptionInterface $exception) {
+                throw $exception;
+            } catch (Throwable $exception) {
+                throw new ServiceNotCreatedException(
+                    $id,
+                    $this->isDebugEnabled()
+                        ? $exception->getMessage()
+                        : 'see getPrevious() for the underlying reason',
+                    $exception,
+                );
+            }
         }
 
         if ($this->factoryStorage->has($id)) {
             $factory = $this->factoryStorage->get($id);
-            return $this->resolveService($id, function () use ($factory): object {
-                /** @var object */
-                return $factory($this);
-            }, true);
+
+            try {
+                return $this->resolveService($id, function () use ($factory): object {
+                    /** @var object */
+                    return $factory($this);
+                }, true);
+            } catch (ContainerExceptionInterface|NotFoundExceptionInterface $exception) {
+                throw $exception;
+            } catch (Throwable $exception) {
+                throw new ServiceNotCreatedException(
+                    $id,
+                    $this->isDebugEnabled()
+                        ? $exception->getMessage()
+                        : 'see getPrevious() for the underlying reason',
+                    $exception,
+                );
+            }
+        }
+
+        if (!$this->canResolve($id, $this->strictResolution)) {
+            throw new NotFoundException($id, $this->isDebugEnabled() ? $this->getAvailableServices() : []);
         }
 
         try {
             return $this->resolveService($id, fn() => $this->make($id), true);
-        } catch (ContainerExceptionInterface $exception) {
+        } catch (ContainerExceptionInterface|NotFoundExceptionInterface $exception) {
             throw $exception;
         } catch (Throwable $exception) {
-            throw new NotFoundException($id, $this->getAvailableServices());
+            throw new ServiceNotCreatedException(
+                $id,
+                $this->isDebugEnabled()
+                    ? $exception->getMessage()
+                    : 'see getPrevious() for the underlying reason',
+                $exception,
+            );
         }
+    }
+
+    private function canResolve(string $id, bool $registeredOnly = false): bool
+    {
+        $registered = $this->serviceStorage->has($id)
+            || $this->factoryStorage->has($id)
+            || isset($this->dependencyMapper->getClassMap()[$id])
+            || $this->providerStorage->has($id);
+
+        if ($registered) {
+            return true;
+        }
+
+        if ($registeredOnly) {
+            return false;
+        }
+
+        return class_exists($id) || interface_exists($id);
     }
 
     #[Override]
@@ -179,6 +267,9 @@ class Container implements ContainerInterface
 
     private function make(string $className): object
     {
+        $startTime = microtime(true);
+        $this->eventDispatcher->dispatch(new Event\ContainerEvent(Event\ContainerEvents::BEFORE_MAKE, $className));
+
         if (interface_exists($className)) {
             if ($this->providerStorage->has($className)) {
                 $provider = $this->providerStorage->get($className);
@@ -186,6 +277,12 @@ class Container implements ContainerInterface
 
                 if (null !== $service) {
                     if ($service instanceof $className) {
+                        $this->eventDispatcher->dispatch(new Event\ContainerEvent(
+                            Event\ContainerEvents::AFTER_MAKE,
+                            $className,
+                            $service,
+                            microtime(true) - $startTime,
+                        ));
                         return $service;
                     }
                 }
@@ -193,13 +290,21 @@ class Container implements ContainerInterface
             $className = $this->dependencyMapper->getBind($className);
         }
 
-        return $this->makeRequiredObject($className);
+        $service = $this->makeRequiredObject($className);
+        $this->eventDispatcher->dispatch(new Event\ContainerEvent(
+            Event\ContainerEvents::AFTER_MAKE,
+            $className,
+            $service,
+            microtime(true) - $startTime,
+        ));
+        return $service;
     }
 
     #[Override]
     public function bind(array $classMap): self
     {
         $this->dependencyMapper->bind($classMap);
+        $this->dependenciesTree = [];
 
         return $this;
     }
@@ -229,6 +334,8 @@ class Container implements ContainerInterface
                 $this->finalizers[$bindClassName] = $finalizer;
             }
         }
+
+        $this->dependenciesTree = [];
 
         return $this;
     }
@@ -295,14 +402,21 @@ class Container implements ContainerInterface
         $this->argumentsStorage->reset();
         $this->factoryStorage->reset();
         $this->tagStorage->reset();
+        $this->decoratorStorage->reset();
+        $this->eventDispatcher->reset();
+        $this->debugInfo->reset();
         $this->dependenciesTree = [];
         $this->finalizers = [];
+        $this->finalized = false;
         return $this;
     }
 
     #[Override]
     public function finalize(): self
     {
+        if ($this->finalized) {
+            return $this;
+        }
         $this->eventDispatcher->dispatch(new Event\ContainerEvent(Event\ContainerEvents::BEFORE_FINALIZE));
 
         foreach ($this->serviceStorage->getAll() as $className => $service) {
@@ -341,6 +455,8 @@ class Container implements ContainerInterface
         }
 
         $this->eventDispatcher->dispatch(new Event\ContainerEvent(Event\ContainerEvents::AFTER_FINALIZE));
+
+        $this->finalized = true;
 
         return $this;
     }
@@ -503,6 +619,7 @@ class Container implements ContainerInterface
 
             $binding = $this->attributeReader->getBinding($className);
             if ($binding !== null) {
+                $this->dependencyMapper->assertBindingValid($binding, $className);
                 $this->bind([$binding => $className]);
             }
         }
@@ -526,7 +643,10 @@ class Container implements ContainerInterface
         foreach ($decorators as $decorator) {
             $decorated = $decorator($service, $this);
             if (!is_object($decorated)) {
-                throw new RuntimeException("Decorator for {$serviceId} must return an object");
+                throw new ServiceNotCreatedException(
+                    $serviceId,
+                    "Decorator for {$serviceId} must return an object",
+                );
             }
             $service = $decorated;
         }
@@ -538,28 +658,33 @@ class Container implements ContainerInterface
     {
         $startTime = microtime(true);
         $startMemory = memory_get_usage();
+        ++$this->resolveDepth;
 
-        /** @var object $service */
-        $service = $resolver();
-        $service = $this->applyDecorators($id, $service);
+        try {
+            /** @var object $service */
+            $service = $resolver();
+            $service = $this->applyDecorators($id, $service);
 
-        if ($cache) {
-            $this->serviceStorage->set($id, $service);
+            if ($cache) {
+                $this->serviceStorage->set($id, $service);
+            }
+
+            if ($this->debugInfo->isEnabled()) {
+                $time = microtime(true) - $startTime;
+                $memory = memory_get_usage() - $startMemory;
+                $this->debugInfo->recordResolution($id, $time, $memory, depth: $this->resolveDepth);
+            }
+
+            $this->eventDispatcher->dispatch(new Event\ContainerEvent(
+                Event\ContainerEvents::AFTER_RESOLVE,
+                $id,
+                $service,
+                microtime(true) - $startTime,
+            ));
+
+            return $service;
+        } finally {
+            --$this->resolveDepth;
         }
-
-        if ($this->debugInfo->isEnabled()) {
-            $time = microtime(true) - $startTime;
-            $memory = memory_get_usage() - $startMemory;
-            $this->debugInfo->recordResolution($id, $time, $memory);
-        }
-
-        $this->eventDispatcher->dispatch(new Event\ContainerEvent(
-            Event\ContainerEvents::AFTER_RESOLVE,
-            $id,
-            $service,
-            microtime(true) - $startTime,
-        ));
-
-        return $service;
     }
 }

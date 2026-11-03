@@ -25,6 +25,8 @@ class ContainerConfig
 
     private bool $autoTagging = false;
 
+    private bool $strictResolution = false;
+
     /** @param array<string, string> $bind */
     public function withBind(array $bind): ContainerConfig
     {
@@ -116,6 +118,10 @@ class ContainerConfig
         return $this->debugMode;
     }
 
+    /**
+     * Auto-tagging tags a service by ALL implemented interfaces, including
+     * inherited ones.
+     */
     public function withAutoTagging(bool $enabled = true): ContainerConfig
     {
         $this->autoTagging = $enabled;
@@ -125,5 +131,16 @@ class ContainerConfig
     public function isAutoTagging(): bool
     {
         return $this->autoTagging;
+    }
+
+    public function withStrictResolution(bool $strict = false): ContainerConfig
+    {
+        $this->strictResolution = $strict;
+        return $this;
+    }
+
+    public function isStrictResolution(): bool
+    {
+        return $this->strictResolution;
     }
 }
