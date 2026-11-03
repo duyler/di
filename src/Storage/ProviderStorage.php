@@ -6,9 +6,6 @@ namespace Duyler\DI\Storage;
 
 use Duyler\DI\Provider\ProviderInterface;
 
-/**
- * Configuration storage: survives container reset().
- */
 final class ProviderStorage
 {
     /** @var array<string, ProviderInterface> */
@@ -30,8 +27,8 @@ final class ProviderStorage
     }
 
     /**
-     * @return array<string, ProviderInterface>
-     */
+    * @return array<string, ProviderInterface>
+    */
     public function getAll(): array
     {
         return $this->providers;

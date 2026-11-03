@@ -19,8 +19,8 @@ final class DecoratorStorage
     }
 
     /**
-     * @return array<callable>
-     */
+    * @return array<callable>
+    */
     public function get(string $serviceId): array
     {
         return $this->decorators[$serviceId] ?? [];

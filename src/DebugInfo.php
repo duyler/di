@@ -30,13 +30,10 @@ final class DebugInfo
     }
 
     /**
-     * @param float $time resolution time in seconds
-     * @param int $memory memory delta for the resolution
-     * @param int $depth re-entrancy depth of resolveService at the moment of
-     *     recording (resolved_at reflects the moment of recording, which
-     *     happens after resolution and decoration, not after resolution
-     *     started)
-     */
+    * @param float $time resolution time in seconds
+    * @param int $memory memory delta for the resolution
+    * @param int $depth re-entrancy depth of resolveService at the moment of
+    */
     public function recordResolution(string $serviceId, float $time, int $memory, int $depth = 0): void
     {
         if (!$this->enabled) {
@@ -66,8 +63,8 @@ final class DebugInfo
     }
 
     /**
-     * @return array<string, array{count: int, total_time: float, avg_time: float, memory: int, resolved_at: array<float>}>
-     */
+    * @return array<string, array{count: int, total_time: float, avg_time: float, memory: int, resolved_at: array<float>}>
+    */
     public function getResolutions(): array
     {
         $result = [];
@@ -86,16 +83,16 @@ final class DebugInfo
     }
 
     /**
-     * @return array<array{service: string, time: float, memory: int, depth: int}>
-     */
+    * @return array<array{service: string, time: float, memory: int, depth: int}>
+    */
     public function getResolutionLog(): array
     {
         return $this->resolutionLog;
     }
 
     /**
-     * @return array{total_resolutions: int, unique_services: int, total_time: float, peak_memory: int, avg_time: float}
-     */
+    * @return array{total_resolutions: int, unique_services: int, total_time: float, peak_memory: int, avg_time: float}
+    */
     public function getStatistics(): array
     {
         $totalResolutions = 0;

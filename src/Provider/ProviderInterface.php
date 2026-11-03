@@ -19,16 +19,5 @@ interface ProviderInterface
 
     public function finalizer(): ?callable;
 
-    /**
-     * Returns a service for the resolved class or null if the provider abstains
-     * (the service will then be created through its constructor).
-     *
-     * When the class is resolved as a dependency, the returned object must be
-     * an instance of the resolved class, otherwise ServiceNotCreatedException
-     * is thrown. When the interface is resolved directly, an incompatible
-     * result is silently discarded and the bound implementation is used
-     * instead (unifying these paths is a candidate for the next major
-     * version).
-     */
     public function factory(ContainerService $containerService): ?object;
 }

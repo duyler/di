@@ -10,8 +10,8 @@ final class TagStorage
     private array $tags = [];
 
     /**
-     * @param string|array<string> $tags
-     */
+    * @param string|array<string> $tags
+    */
     public function tag(string $serviceId, string|array $tags): void
     {
         $tags = is_array($tags) ? $tags : [$tags];
@@ -28,8 +28,8 @@ final class TagStorage
     }
 
     /**
-     * @return array<string>
-     */
+    * @return array<string>
+    */
     public function tagged(string $tag): array
     {
         return $this->tags[$tag] ?? [];

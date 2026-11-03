@@ -9,10 +9,6 @@ final class ServiceStorage
     /** @var array<string, object> */
     private array $services = [];
 
-    /**
-     * Replaces silently: the last set() wins; references already injected
-     * keep the previous object.
-     */
     public function set(string $className, object $definition): void
     {
         $this->services[$className] = $definition;

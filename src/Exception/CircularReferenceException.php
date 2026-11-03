@@ -10,8 +10,8 @@ use Psr\Container\ContainerExceptionInterface;
 class CircularReferenceException extends Exception implements ContainerExceptionInterface
 {
     /**
-     * @param array<string> $chain
-     */
+    * @param array<string> $chain
+    */
     public function __construct(string $className, string $depClassName, array $chain = [])
     {
         $message = sprintf(

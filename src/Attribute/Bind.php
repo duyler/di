@@ -10,8 +10,8 @@ use Attribute;
 final readonly class Bind
 {
     /**
-     * @param class-string $interface
-     */
+    * @param class-string $interface
+    */
     public function __construct(
         public string $interface,
     ) {}

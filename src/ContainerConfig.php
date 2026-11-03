@@ -58,8 +58,8 @@ class ContainerConfig
     }
 
     /**
-     * @param string|array<string> $tags
-     */
+    * @param string|array<string> $tags
+    */
     public function withTag(string $serviceId, string|array $tags): ContainerConfig
     {
         $this->tags[$serviceId] = $tags;
@@ -68,40 +68,40 @@ class ContainerConfig
     }
 
     /**
-     * @return array<string, string>
-     */
+    * @return array<string, string>
+    */
     public function getClassMap(): array
     {
         return $this->classMap;
     }
 
     /**
-     * @return array<string, string>
-     */
+    * @return array<string, string>
+    */
     public function getProviders(): array
     {
         return $this->providers;
     }
 
     /**
-     * @return array<array-key, Definition>
-     */
+    * @return array<array-key, Definition>
+    */
     public function getDefinitions(): array
     {
         return $this->definitions;
     }
 
     /**
-     * @return array<string, Scope>
-     */
+    * @return array<string, Scope>
+    */
     public function getScopes(): array
     {
         return $this->scopes;
     }
 
     /**
-     * @return array<string, string|array<string>>
-     */
+    * @return array<string, string|array<string>>
+    */
     public function getTags(): array
     {
         return $this->tags;
@@ -118,10 +118,6 @@ class ContainerConfig
         return $this->debugMode;
     }
 
-    /**
-     * Auto-tagging tags a service by ALL implemented interfaces, including
-     * inherited ones.
-     */
     public function withAutoTagging(bool $enabled = true): ContainerConfig
     {
         $this->autoTagging = $enabled;

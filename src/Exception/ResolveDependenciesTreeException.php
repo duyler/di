@@ -11,8 +11,8 @@ use Throwable;
 class ResolveDependenciesTreeException extends Exception implements ContainerExceptionInterface
 {
     /**
-     * @param array<string> $chain
-     */
+    * @param array<string> $chain
+    */
     public function __construct(
         string $className,
         string $reason,

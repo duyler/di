@@ -6,11 +6,6 @@ namespace Duyler\DI\Storage;
 
 use Duyler\DI\Scope;
 
-/**
- * Configuration storage: survives container reset().
- * Singleton is the default scope; manage non-default scopes
- * through withScope() or the #[Transient] attribute.
- */
 final class ScopeStorage
 {
     /** @var array<string, Scope> */

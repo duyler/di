@@ -6,14 +6,11 @@ namespace Duyler\DI\Storage;
 
 use ReflectionClass;
 
-/**
- * Configuration storage: survives container reset().
- */
 final class ReflectionStorage
 {
     /**
-     * @var ReflectionClass[]
-     */
+    * @var ReflectionClass[]
+    */
     private array $reflections = [];
 
     public function get(string $reflectionClassName): ReflectionClass

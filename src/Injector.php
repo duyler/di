@@ -42,9 +42,9 @@ final class Injector
     }
 
     /**
-     * @param array<string, array<string, string>> $dependenciesTree
-     * @throws ResolveDependenciesTreeException
-     */
+    * @param array<string, array<string, string>> $dependenciesTree
+    * @throws ResolveDependenciesTreeException
+    */
     public function build(string $className, array $dependenciesTree = []): void
     {
         if (empty($dependenciesTree)) {
@@ -57,9 +57,9 @@ final class Injector
     }
 
     /**
-     * @param array<string, array<string, string>> $dependenciesTree
-     * @throws ResolveDependenciesTreeException
-     */
+    * @param array<string, array<string, string>> $dependenciesTree
+    * @throws ResolveDependenciesTreeException
+    */
     public function buildTransient(string $className, array $dependenciesTree = []): object
     {
         if (empty($dependenciesTree)) {
@@ -87,9 +87,9 @@ final class Injector
     }
 
     /**
-     * @param array<string, array<string, string>> $dependenciesTree
-     * @throws ResolveDependenciesTreeException
-     */
+    * @param array<string, array<string, string>> $dependenciesTree
+    * @throws ResolveDependenciesTreeException
+    */
     private function iterateDependenciesTree(array $dependenciesTree): void
     {
         $deps = end($dependenciesTree);
@@ -110,10 +110,10 @@ final class Injector
     }
 
     /**
-     * @param array<string, string> $deps
-     * @param array<string, array<string, string>> $dependenciesTree
-     * @throws NotFoundException
-     */
+    * @param array<string, string> $deps
+    * @param array<string, array<string, string>> $dependenciesTree
+    * @throws NotFoundException
+    */
     private function instanceClass(string $className, array $deps = [], array $dependenciesTree = []): void
     {
         $dependencies = [];
@@ -136,9 +136,8 @@ final class Injector
     }
 
     /**
-     * @throws ResolveDependenciesTreeException
-     * @psalm-suppress InvalidStringClass
-     */
+    * @throws ResolveDependenciesTreeException
+    */
     private function prepareDependencies(string $className, array $dependencies = []): void
     {
         $arguments = $this->argumentsStorage->get($className);
@@ -181,9 +180,8 @@ final class Injector
     }
 
     /**
-     * @throws ResolveDependenciesTreeException
-     * @psalm-suppress InvalidStringClass
-     */
+    * @throws ResolveDependenciesTreeException
+    */
     private function createTransientInstance(string $className): object
     {
         $arguments = $this->argumentsStorage->get($className);
@@ -220,9 +218,9 @@ final class Injector
     }
 
     /**
-     * @param array<string, array<string, string>> $dependenciesTree
-     * @throws ResolveDependenciesTreeException
-     */
+    * @param array<string, array<string, string>> $dependenciesTree
+    * @throws ResolveDependenciesTreeException
+    */
     private function createTransientWithDependencies(string $className, array $dependenciesTree): object
     {
         $targetDeps = $dependenciesTree[$className] ?? [];
@@ -256,14 +254,10 @@ final class Injector
     }
 
     /**
-     * @param string $className owner class whose constructor is checked
-     * @param array<array-key, mixed> $arguments final merged arguments of the
-     *     instantiation call; a missing key means the parameter will not be
-     *     provided
-     * @throws ServiceNotCreatedException when a non-variadic class-typed
-     *     parameter has no default value, does not allow null and is not
-     *     covered by $arguments
-     */
+    * @param string $className owner class whose constructor is checked
+    * @param array<array-key, mixed> $arguments final merged arguments of the
+    * @throws ServiceNotCreatedException when a non-variadic class-typed
+    */
     private function assertArgumentsSatisfiable(string $className, array $arguments): void
     {
         if (!class_exists($className) && !enum_exists($className)) {
@@ -303,10 +297,9 @@ final class Injector
     }
 
     /**
-     * @param array<string, object> $dependencies
-     * @throws ResolveDependenciesTreeException
-     * @psalm-suppress InvalidStringClass
-     */
+    * @param array<string, object> $dependencies
+    * @throws ResolveDependenciesTreeException
+    */
     private function createTransientInstanceWithDeps(string $className, array $dependencies): object
     {
         $arguments = $this->argumentsStorage->get($className);

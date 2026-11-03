@@ -11,9 +11,9 @@ use Throwable;
 class NotFoundException extends Exception implements NotFoundExceptionInterface
 {
     /**
-     * @param array<string> $availableServices
-     * @param array<string> $chain
-     */
+    * @param array<string> $availableServices
+    * @param array<string> $chain
+    */
     public function __construct(
         string $className,
         array $availableServices = [],
@@ -48,9 +48,9 @@ class NotFoundException extends Exception implements NotFoundExceptionInterface
     }
 
     /**
-     * @param array<string> $availableServices
-     * @return array<string>
-     */
+    * @param array<string> $availableServices
+    * @return array<string>
+    */
     private function findSuggestions(string $className, array $availableServices): array
     {
         if (empty($availableServices)) {

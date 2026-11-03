@@ -525,8 +525,8 @@ class Container implements ContainerInterface
     }
 
     /**
-     * @return array<string>
-     */
+    * @return array<string>
+    */
     private function getAvailableServices(): array
     {
         $services = [];
@@ -578,8 +578,8 @@ class Container implements ContainerInterface
     }
 
     /**
-     * @param class-string $serviceId
-     */
+    * @param class-string $serviceId
+    */
     #[Override]
     public function decorate(string $serviceId, callable $decorator): self
     {
@@ -588,8 +588,8 @@ class Container implements ContainerInterface
     }
 
     /**
-     * @param class-string $className
-     */
+    * @param class-string $className
+    */
     private function applyAttributes(string $className): void
     {
         if (!class_exists($className)) {

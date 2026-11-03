@@ -41,24 +41,24 @@ final class DependencyMapper
     ) {}
 
     /**
-     * @param array<string, string> $classMap
-     */
+    * @param array<string, string> $classMap
+    */
     public function bind(array $classMap): void
     {
         $this->classMap = $classMap + $this->classMap;
     }
 
     /**
-     * @return array<string, string>
-     */
+    * @return array<string, string>
+    */
     public function getClassMap(): array
     {
         return $this->classMap;
     }
 
     /**
-     * @return array<string>
-     */
+    * @return array<string>
+    */
     public function validateBindings(): array
     {
         $errors = [];
@@ -76,8 +76,8 @@ final class DependencyMapper
     }
 
     /**
-     * @throws InterfaceBindNotFoundException
-     */
+    * @throws InterfaceBindNotFoundException
+    */
     public function getBind(string $interface): string
     {
         if ($this->providerStorage->has($interface)) {
@@ -100,8 +100,8 @@ final class DependencyMapper
     }
 
     /**
-     * @return array<string, array<string, string>>
-     */
+    * @return array<string, array<string, string>>
+    */
     public function resolve(string $className): array
     {
         $isNested = $this->resolutionStack !== [];
@@ -173,12 +173,6 @@ final class DependencyMapper
         }
     }
 
-    /**
-     * Enums are skipped: class_exists() returns true for enums, so
-     * enum_exists() is checked explicitly.
-     *
-     * @psalm-suppress ArgumentTypeCoercion
-     */
     private function buildDependencies(ReflectionMethod $constructor, string $className): void
     {
         foreach ($constructor->getParameters() as $param) {
@@ -233,8 +227,8 @@ final class DependencyMapper
     }
 
     /**
-     * @throws InterfaceMapNotFoundException
-     */
+    * @throws InterfaceMapNotFoundException
+    */
     private function prepareInterface(ReflectionClass $interface, string $className, string $depArgName): void
     {
         $depInterfaceName = $interface->getName();
@@ -282,8 +276,8 @@ final class DependencyMapper
     }
 
     /**
-     * @throws InvalidBindingException
-     */
+    * @throws InvalidBindingException
+    */
     private function validateBinding(string $interface, string $implementation): void
     {
         if (!class_exists($interface) && !interface_exists($interface)) {

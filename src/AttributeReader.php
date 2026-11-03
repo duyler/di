@@ -14,11 +14,8 @@ use ReflectionClass;
 final class AttributeReader
 {
     /**
-     * Class attributes are immutable at runtime, so the computed result is
-     * cached for the container lifetime and never invalidated.
-     *
-     * @var array<string, bool>
-     */
+    * @var array<string, bool>
+    */
     private array $hasAttributesCache = [];
 
     public function __construct(
@@ -26,8 +23,8 @@ final class AttributeReader
     ) {}
 
     /**
-     * @param class-string $className
-     */
+    * @param class-string $className
+    */
     private function reflection(string $className): ReflectionClass
     {
         if (false === $this->reflectionStorage->has($className)) {
@@ -38,11 +35,8 @@ final class AttributeReader
     }
 
     /**
-     * Singleton is the default scope; manage non-default scopes
-     * through withScope() or the #[Transient] attribute.
-     *
-     * @param class-string $className
-     */
+    * @param class-string $className
+    */
     public function getScope(string $className): ?Scope
     {
         $reflection = $this->reflection($className);
@@ -55,9 +49,9 @@ final class AttributeReader
     }
 
     /**
-     * @param class-string $className
-     * @return array<string>
-     */
+    * @param class-string $className
+    * @return array<string>
+    */
     public function getTags(string $className): array
     {
         $reflection = $this->reflection($className);
@@ -74,9 +68,9 @@ final class AttributeReader
     }
 
     /**
-     * @param class-string $className
-     * @return class-string|null
-     */
+    * @param class-string $className
+    * @return class-string|null
+    */
     public function getBinding(string $className): ?string
     {
         $reflection = $this->reflection($className);
@@ -93,8 +87,8 @@ final class AttributeReader
     }
 
     /**
-     * @param class-string $className
-     */
+    * @param class-string $className
+    */
     public function hasAttributes(string $className): bool
     {
         if (isset($this->hasAttributesCache[$className])) {
@@ -110,9 +104,9 @@ final class AttributeReader
     }
 
     /**
-     * @param class-string $className
-     * @return array<class-string>
-     */
+    * @param class-string $className
+    * @return array<class-string>
+    */
     public function getInterfaces(string $className): array
     {
         $reflection = $this->reflection($className);
