@@ -41,7 +41,7 @@ final class DependencyMapper
     ) {}
 
     /**
-    * @param array<string, string> $classMap
+     * @param array<string, string> $classMap
     */
     public function bind(array $classMap): void
     {
@@ -49,7 +49,7 @@ final class DependencyMapper
     }
 
     /**
-    * @return array<string, string>
+     * @return array<string, string>
     */
     public function getClassMap(): array
     {
@@ -57,7 +57,7 @@ final class DependencyMapper
     }
 
     /**
-    * @return array<string>
+     * @return array<string>
     */
     public function validateBindings(): array
     {
@@ -76,7 +76,7 @@ final class DependencyMapper
     }
 
     /**
-    * @throws InterfaceBindNotFoundException
+     * @throws InterfaceBindNotFoundException
     */
     public function getBind(string $interface): string
     {
@@ -100,7 +100,7 @@ final class DependencyMapper
     }
 
     /**
-    * @return array<string, array<string, string>>
+     * @return array<string, array<string, string>>
     */
     public function resolve(string $className): array
     {
@@ -227,7 +227,7 @@ final class DependencyMapper
     }
 
     /**
-    * @throws InterfaceMapNotFoundException
+     * @throws InterfaceMapNotFoundException
     */
     private function prepareInterface(ReflectionClass $interface, string $className, string $depArgName): void
     {
@@ -276,7 +276,7 @@ final class DependencyMapper
     }
 
     /**
-    * @throws InvalidBindingException
+     * @throws InvalidBindingException
     */
     private function validateBinding(string $interface, string $implementation): void
     {

@@ -58,7 +58,7 @@ class ContainerConfig
     }
 
     /**
-    * @param string|array<string> $tags
+     * @param string|array<string> $tags
     */
     public function withTag(string $serviceId, string|array $tags): ContainerConfig
     {
@@ -68,7 +68,7 @@ class ContainerConfig
     }
 
     /**
-    * @return array<string, string>
+     * @return array<string, string>
     */
     public function getClassMap(): array
     {
@@ -76,7 +76,7 @@ class ContainerConfig
     }
 
     /**
-    * @return array<string, string>
+     * @return array<string, string>
     */
     public function getProviders(): array
     {
@@ -84,7 +84,7 @@ class ContainerConfig
     }
 
     /**
-    * @return array<array-key, Definition>
+     * @return array<array-key, Definition>
     */
     public function getDefinitions(): array
     {
@@ -92,7 +92,7 @@ class ContainerConfig
     }
 
     /**
-    * @return array<string, Scope>
+     * @return array<string, Scope>
     */
     public function getScopes(): array
     {
@@ -100,7 +100,7 @@ class ContainerConfig
     }
 
     /**
-    * @return array<string, string|array<string>>
+     * @return array<string, string|array<string>>
     */
     public function getTags(): array
     {

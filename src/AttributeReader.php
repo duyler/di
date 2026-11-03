@@ -14,7 +14,7 @@ use ReflectionClass;
 final class AttributeReader
 {
     /**
-    * @var array<string, bool>
+     * @var array<string, bool>
     */
     private array $hasAttributesCache = [];
 
@@ -23,7 +23,7 @@ final class AttributeReader
     ) {}
 
     /**
-    * @param class-string $className
+     * @param class-string $className
     */
     private function reflection(string $className): ReflectionClass
     {
@@ -35,7 +35,7 @@ final class AttributeReader
     }
 
     /**
-    * @param class-string $className
+     * @param class-string $className
     */
     public function getScope(string $className): ?Scope
     {
@@ -49,8 +49,8 @@ final class AttributeReader
     }
 
     /**
-    * @param class-string $className
-    * @return array<string>
+     * @param class-string $className
+     * @return array<string>
     */
     public function getTags(string $className): array
     {
@@ -68,8 +68,8 @@ final class AttributeReader
     }
 
     /**
-    * @param class-string $className
-    * @return class-string|null
+     * @param class-string $className
+     * @return class-string|null
     */
     public function getBinding(string $className): ?string
     {
@@ -87,7 +87,7 @@ final class AttributeReader
     }
 
     /**
-    * @param class-string $className
+     * @param class-string $className
     */
     public function hasAttributes(string $className): bool
     {
@@ -104,8 +104,8 @@ final class AttributeReader
     }
 
     /**
-    * @param class-string $className
-    * @return array<class-string>
+     * @param class-string $className
+     * @return array<class-string>
     */
     public function getInterfaces(string $className): array
     {

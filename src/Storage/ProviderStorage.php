@@ -27,7 +27,7 @@ final class ProviderStorage
     }
 
     /**
-    * @return array<string, ProviderInterface>
+     * @return array<string, ProviderInterface>
     */
     public function getAll(): array
     {

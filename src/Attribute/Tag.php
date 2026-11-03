@@ -10,7 +10,7 @@ use Attribute;
 final readonly class Tag
 {
     /**
-    * @param string|array<string> $tags
+     * @param string|array<string> $tags
     */
     public function __construct(
         public string|array $tags,

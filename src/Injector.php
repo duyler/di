@@ -42,8 +42,8 @@ final class Injector
     }
 
     /**
-    * @param array<string, array<string, string>> $dependenciesTree
-    * @throws ResolveDependenciesTreeException
+     * @param array<string, array<string, string>> $dependenciesTree
+     * @throws ResolveDependenciesTreeException
     */
     public function build(string $className, array $dependenciesTree = []): void
     {
@@ -57,8 +57,8 @@ final class Injector
     }
 
     /**
-    * @param array<string, array<string, string>> $dependenciesTree
-    * @throws ResolveDependenciesTreeException
+     * @param array<string, array<string, string>> $dependenciesTree
+     * @throws ResolveDependenciesTreeException
     */
     public function buildTransient(string $className, array $dependenciesTree = []): object
     {
@@ -87,8 +87,8 @@ final class Injector
     }
 
     /**
-    * @param array<string, array<string, string>> $dependenciesTree
-    * @throws ResolveDependenciesTreeException
+     * @param array<string, array<string, string>> $dependenciesTree
+     * @throws ResolveDependenciesTreeException
     */
     private function iterateDependenciesTree(array $dependenciesTree): void
     {
@@ -110,9 +110,9 @@ final class Injector
     }
 
     /**
-    * @param array<string, string> $deps
-    * @param array<string, array<string, string>> $dependenciesTree
-    * @throws NotFoundException
+     * @param array<string, string> $deps
+     * @param array<string, array<string, string>> $dependenciesTree
+     * @throws NotFoundException
     */
     private function instanceClass(string $className, array $deps = [], array $dependenciesTree = []): void
     {
@@ -136,7 +136,7 @@ final class Injector
     }
 
     /**
-    * @throws ResolveDependenciesTreeException
+     * @throws ResolveDependenciesTreeException
     */
     private function prepareDependencies(string $className, array $dependencies = []): void
     {
@@ -159,6 +159,7 @@ final class Injector
                 }
 
                 if (null === $definition) {
+                    /** @psalm-suppress InvalidStringClass */
                     $definition = new $className(...$arguments + $dependencies);
                 }
 
@@ -180,7 +181,7 @@ final class Injector
     }
 
     /**
-    * @throws ResolveDependenciesTreeException
+     * @throws ResolveDependenciesTreeException
     */
     private function createTransientInstance(string $className): object
     {
@@ -199,6 +200,7 @@ final class Injector
                 return $this->providerFactoryServiceStorage->get($className);
             }
 
+            /** @psalm-suppress InvalidStringClass */
             $instance = new $className(...$arguments);
 
             if ($this->providerStorage->has($className)) {
@@ -218,8 +220,8 @@ final class Injector
     }
 
     /**
-    * @param array<string, array<string, string>> $dependenciesTree
-    * @throws ResolveDependenciesTreeException
+     * @param array<string, array<string, string>> $dependenciesTree
+     * @throws ResolveDependenciesTreeException
     */
     private function createTransientWithDependencies(string $className, array $dependenciesTree): object
     {
@@ -254,9 +256,9 @@ final class Injector
     }
 
     /**
-    * @param string $className owner class whose constructor is checked
-    * @param array<array-key, mixed> $arguments final merged arguments of the
-    * @throws ServiceNotCreatedException when a non-variadic class-typed
+     * @param string $className owner class whose constructor is checked
+     * @param array<array-key, mixed> $arguments final merged arguments of the
+     * @throws ServiceNotCreatedException when a non-variadic class-typed
     */
     private function assertArgumentsSatisfiable(string $className, array $arguments): void
     {
@@ -297,8 +299,8 @@ final class Injector
     }
 
     /**
-    * @param array<string, object> $dependencies
-    * @throws ResolveDependenciesTreeException
+     * @param array<string, object> $dependencies
+     * @throws ResolveDependenciesTreeException
     */
     private function createTransientInstanceWithDeps(string $className, array $dependencies): object
     {
@@ -311,6 +313,7 @@ final class Injector
         $this->assertArgumentsSatisfiable($className, $arguments + $dependencies);
 
         try {
+            /** @psalm-suppress InvalidStringClass */
             $instance = new $className(...$arguments + $dependencies);
 
             if ($this->providerStorage->has($className)) {

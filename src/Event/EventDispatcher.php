@@ -35,7 +35,7 @@ final class EventDispatcher
     }
 
     /**
-    * @return array<string, array<callable>>
+     * @return array<string, array<callable>>
     */
     public function getListeners(): array
     {

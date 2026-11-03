@@ -16,17 +16,17 @@ interface ContainerInterface extends PsrContainerInterface
     public function has(string $id): bool;
 
     /**
-    * @param array<string, string> $classMap
+     * @param array<string, string> $classMap
     */
     public function bind(array $classMap): self;
 
     /**
-    * @param array<string, string> $providers
+     * @param array<string, string> $providers
     */
     public function addProviders(array $providers): self;
 
     /**
-    * @return array<string, string>
+     * @return array<string, string>
     */
     public function getClassMap(): array;
 
@@ -35,7 +35,7 @@ interface ContainerInterface extends PsrContainerInterface
     public function addDefinition(Definition $definition): self;
 
     /**
-    * @return array<string, array<string, array<string, string>>>
+     * @return array<string, array<string, array<string, string>>>
     */
     public function getDependencyTree(): array;
 
@@ -49,17 +49,17 @@ interface ContainerInterface extends PsrContainerInterface
     public function factory(string $className, callable $factory): self;
 
     /**
-    * @return array<string>
+     * @return array<string>
     */
     public function compile(): array;
 
     /**
-    * @param string|array<string> $tags
+     * @param string|array<string> $tags
     */
     public function tag(string $serviceId, string|array $tags): self;
 
     /**
-    * @return array<object>
+     * @return array<object>
     */
     public function tagged(string $tag): array;
 
@@ -76,7 +76,7 @@ interface ContainerInterface extends PsrContainerInterface
     public function getEventDispatcher(): Event\EventDispatcher;
 
     /**
-    * @param class-string $serviceId
+     * @param class-string $serviceId
     */
     public function decorate(string $serviceId, callable $decorator): self;
 }

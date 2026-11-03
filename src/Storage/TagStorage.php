@@ -10,7 +10,7 @@ final class TagStorage
     private array $tags = [];
 
     /**
-    * @param string|array<string> $tags
+     * @param string|array<string> $tags
     */
     public function tag(string $serviceId, string|array $tags): void
     {
@@ -28,7 +28,7 @@ final class TagStorage
     }
 
     /**
-    * @return array<string>
+     * @return array<string>
     */
     public function tagged(string $tag): array
     {
