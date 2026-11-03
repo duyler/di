@@ -480,11 +480,9 @@ class Container implements ContainerInterface
     {
         $errors = [];
 
-        // Validate bindings first
         $bindingErrors = $this->dependencyMapper->validateBindings();
         $errors = array_merge($errors, $bindingErrors);
 
-        // Then validate dependency resolution
         $classMap = $this->dependencyMapper->getClassMap();
 
         foreach ($classMap as $interface => $implementation) {
