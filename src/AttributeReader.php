@@ -76,7 +76,7 @@ final class AttributeReader
         $reflection = $this->reflection($className);
         $attributes = $reflection->getAttributes(Bind::class);
 
-        if (empty($attributes)) {
+        if ($attributes === []) {
             return null;
         }
 
@@ -97,10 +97,10 @@ final class AttributeReader
 
         $reflection = $this->reflection($className);
 
-        return $this->hasAttributesCache[$className] = !empty($reflection->getAttributes(Transient::class))
-            || !empty($reflection->getAttributes(Finalize::class))
-            || !empty($reflection->getAttributes(Tag::class))
-            || !empty($reflection->getAttributes(Bind::class));
+        return $this->hasAttributesCache[$className] = $reflection->getAttributes(Transient::class) !== []
+            || $reflection->getAttributes(Finalize::class) !== []
+            || $reflection->getAttributes(Tag::class) !== []
+            || $reflection->getAttributes(Bind::class) !== [];
     }
 
     /**

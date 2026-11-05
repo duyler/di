@@ -28,7 +28,7 @@ final class DecoratorStorage
 
     public function has(string $serviceId): bool
     {
-        return isset($this->decorators[$serviceId]) && !empty($this->decorators[$serviceId]);
+        return isset($this->decorators[$serviceId]) && $this->decorators[$serviceId] !== [];
     }
 
     public function reset(): void

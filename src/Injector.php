@@ -47,7 +47,7 @@ final class Injector
     */
     public function build(string $className, array $dependenciesTree = []): void
     {
-        if (empty($dependenciesTree)) {
+        if ($dependenciesTree === []) {
             $this->instanceClass($className);
 
             return;
@@ -62,7 +62,7 @@ final class Injector
     */
     public function buildTransient(string $className, array $dependenciesTree = []): object
     {
-        if (empty($dependenciesTree)) {
+        if ($dependenciesTree === []) {
             return $this->createTransientInstance($className);
         }
 
@@ -227,7 +227,7 @@ final class Injector
     {
         $targetDeps = $dependenciesTree[$className] ?? [];
 
-        if (empty($targetDeps)) {
+        if ($targetDeps === []) {
             return $this->createTransientInstance($className);
         }
 

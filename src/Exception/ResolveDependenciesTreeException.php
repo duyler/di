@@ -21,7 +21,7 @@ class ResolveDependenciesTreeException extends Exception implements ContainerExc
     ) {
         $message = sprintf('Failed to resolve dependency tree for "%s"', $className);
 
-        if (!empty($chain)) {
+        if ($chain !== []) {
             $message .= sprintf(
                 "\n\nDependency chain:\n  %s\n  └─> %s (resolution failed here)",
                 implode("\n  └─> ", $chain),
