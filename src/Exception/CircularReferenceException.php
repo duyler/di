@@ -19,7 +19,7 @@ class CircularReferenceException extends Exception implements ContainerException
             $className,
         );
 
-        if (!empty($chain)) {
+        if ($chain !== []) {
             $fullChain = array_merge($chain, [$depClassName]);
             $message .= sprintf(
                 "\n\nDependency chain:\n  %s\n  └─> %s (circular reference back to %s)",

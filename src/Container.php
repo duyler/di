@@ -609,7 +609,7 @@ class Container implements ContainerInterface
             }
 
             $tags = $this->attributeReader->getTags($className);
-            if (!empty($tags)) {
+            if ($tags !== []) {
                 $this->tagStorage->tag($className, $tags);
             }
 
@@ -622,7 +622,7 @@ class Container implements ContainerInterface
 
         if ($this->autoTagging) {
             $interfaces = $this->attributeReader->getInterfaces($className);
-            if (!empty($interfaces)) {
+            if ($interfaces !== []) {
                 $this->tagStorage->tag($className, $interfaces);
             }
         }

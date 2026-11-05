@@ -22,7 +22,7 @@ class NotFoundException extends Exception implements NotFoundExceptionInterface
     ) {
         $message = sprintf('Service "%s" not found in the container.', $className);
 
-        if (!empty($chain)) {
+        if ($chain !== []) {
             $message .= sprintf(
                 "\n\nDependency chain:\n  %s\n  └─> %s (not found)",
                 implode("\n  └─> ", $chain),
@@ -31,7 +31,7 @@ class NotFoundException extends Exception implements NotFoundExceptionInterface
         }
 
         $suggestions = $this->findSuggestions($className, $availableServices);
-        if (!empty($suggestions)) {
+        if ($suggestions !== []) {
             $message .= "\n\nDid you mean one of these?";
             foreach ($suggestions as $suggestion) {
                 $message .= "\n  - " . $suggestion;
@@ -53,7 +53,7 @@ class NotFoundException extends Exception implements NotFoundExceptionInterface
     */
     private function findSuggestions(string $className, array $availableServices): array
     {
-        if (empty($availableServices)) {
+        if ($availableServices === []) {
             return [];
         }
 
