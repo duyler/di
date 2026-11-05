@@ -461,12 +461,73 @@ class FileLogger
 class ConsoleLogger implements LoggerInterface
 {
 }
-
-$container = new Container();
-$logger = $container->get(LoggerInterface::class);
 ```
 
-Attributes work seamlessly with all container features.
+By default, attributes are applied lazily. `#[Transient]` and `#[Tag]` take effect when the service is resolved for the first time. `#[Bind]` registers the binding when the implementing class is resolved for the first time, or after an explicit `bind()` call. Requesting the interface directly — without a prior resolution of the implementation, an explicit binding, or scanning — throws `InterfaceBindNotFoundException`:
+
+```php
+$container = new Container();
+
+$container->get(LoggerInterface::class); // InterfaceBindNotFoundException: nothing has registered the binding yet
+
+$container->get(ConsoleLogger::class); // resolves the implementation and applies #[Bind] lazily
+$logger = $container->get(LoggerInterface::class); // returns a ConsoleLogger instance
+```
+
+To register attribute bindings automatically at container construction, see [Scanning](#scanning).
+
+### Scanning
+
+By default, the container never touches the file system, and a `#[Bind]` attribute takes effect only through lazy application or an explicit `bind()`. Scanning makes attribute bindings work automatically: pass one or more directories to `ContainerConfig::withScanPaths()`, and the container indexes them once in the constructor. The default value is an empty array — no paths, no scanning. Repeated calls accumulate the list, and `withScanPaths(...$dirs)` accepts a plain array of directories:
+
+```php
+// src/Logger.php
+
+use Duyler\DI\Attribute\Bind;
+
+interface LoggerInterface
+{
+}
+
+#[Bind(LoggerInterface::class)]
+class ConsoleLogger implements LoggerInterface
+{
+}
+```
+
+```php
+// index.php
+
+use Duyler\DI\Container;
+use Duyler\DI\ContainerConfig;
+
+$sourceDir = __DIR__ . '/src'; // any directory of your project
+
+$config = new ContainerConfig();
+$config->withScanPaths($sourceDir);
+$container = new Container($config);
+
+$logger = $container->get(LoggerInterface::class); // returns a ConsoleLogger instance
+```
+
+Scanning indexes all four attributes: `#[Bind]`, `#[Transient]`, `#[Tag]` and `#[Finalize]`. Classes without container attributes are loaded as well, but ignored.
+
+Explicit configuration always wins, scanning only fills in what is left unoccupied:
+
+| Attribute | Explicit configuration | Conflict inside the scan |
+|---|---|---|
+| `#[Bind(I)]` | `bind(I => X)` wins, the scanned binding for the same interface is skipped | two `#[Bind(I)]` attributes on different classes throw `DuplicateBindingException` when the container is constructed |
+| `#[Transient]` | `withScope()` wins (existing scope guard) | not possible |
+| `#[Tag]` | union: explicit and attribute tags coexist (deduplicated) | not possible |
+| `#[Finalize]` | not registered eagerly, handled lazily by `finalize()` | not possible |
+
+Bindings discovered by the scan behave like explicit bindings and survive `reset()`. Tags are stored in the tag storage and are cleared by `reset()`, then restored lazily on the next `get()` of the tagged service.
+
+Scanned bindings are registered in the class map, so strict resolution resolves them like explicitly bound services. With auto-tagging enabled, interface tags of scanned classes are visible before the first `get()`.
+
+The scan executes PHP files from the given paths (`require_once`), so pass only trusted directories of your own project. Never build scan paths from user input (request data, uploads). Files that declare no classes are never executed: the scanner reads them as tokens and loads only files containing class declarations. Files that declare classes are executed in full, including any top-level side-effect code — keep scanned directories free of bootstrapping side effects.
+
+The scan runs once, in the constructor, and only when paths are provided — the empty default costs nothing. A path that does not exist or is not readable throws `ScanPathException` at construction. Broken PHP is reported the same way, but only for files with extractable class declarations — a broken file without class declarations is skipped silently, since the token pre-filter never schedules it for execution.
 
 ### Auto-Tagging by Interface
 
