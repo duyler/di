@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Duyler\DI;
 
 use Duyler\DI\Attribute\Finalize;
+use Duyler\DI\Exception\DuplicateBindingException;
 use Duyler\DI\Exception\FinalizeNotImplementException;
 use Duyler\DI\Exception\NotFoundException;
+use Duyler\DI\Exception\ScanPathException;
 use Duyler\DI\Exception\ServiceNotCreatedException;
 use Duyler\DI\Provider\ProviderInterface;
 use Duyler\DI\Storage\FactoryStorage;
@@ -57,6 +59,8 @@ class Container implements ContainerInterface
     private bool $strictResolution = false;
 
     private bool $autoTagging = false;
+
+    private bool $scanEnabled = false;
 
     public function __construct(
         ?ContainerConfig $containerConfig = null,
@@ -112,6 +116,12 @@ class Container implements ContainerInterface
 
         foreach ($containerConfig?->getTags() ?? [] as $serviceId => $tags) {
             $this->tagStorage->tag($serviceId, $tags);
+        }
+
+        $scanPaths = $containerConfig?->getScanPaths() ?? [];
+        $this->scanEnabled = $scanPaths !== [];
+        if ($this->scanEnabled) {
+            $this->runAttributeScan($scanPaths);
         }
     }
 
@@ -616,7 +626,10 @@ class Container implements ContainerInterface
             $binding = $this->attributeReader->getBinding($className);
             if ($binding !== null) {
                 $this->dependencyMapper->assertBindingValid($binding, $className);
-                $this->bind([$binding => $className]);
+                $existing = $this->dependencyMapper->getClassMap()[$binding] ?? null;
+                if ($existing === null || !$this->scanEnabled || $existing === $className) {
+                    $this->bind([$binding => $className]);
+                }
             }
         }
 
@@ -625,6 +638,33 @@ class Container implements ContainerInterface
             if ($interfaces !== []) {
                 $this->tagStorage->tag($className, $interfaces);
             }
+        }
+    }
+
+    /**
+     * @param array<string> $paths
+     * @throws ScanPathException
+     * @throws DuplicateBindingException
+    */
+    private function runAttributeScan(array $paths): void
+    {
+        $classes = (new ClassScanner())->scan($paths);
+
+        $bindCandidates = [];
+        foreach ($classes as $class) {
+            $binding = $this->attributeReader->getBinding($class);
+            if ($binding !== null) {
+                $bindCandidates[$binding][] = $class;
+            }
+        }
+        foreach ($bindCandidates as $interface => $implementations) {
+            if (count(array_unique($implementations)) > 1) {
+                throw new DuplicateBindingException($interface, ...array_unique($implementations));
+            }
+        }
+
+        foreach ($classes as $class) {
+            $this->applyAttributes($class);
         }
     }
 

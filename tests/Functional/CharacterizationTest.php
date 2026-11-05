@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Duyler\DI\Test\Functional;
 
+use Duyler\DI\Attribute\Bind;
+use Duyler\DI\Attribute\Tag;
 use Duyler\DI\Attribute\Transient;
 use Duyler\DI\Container;
+use Duyler\DI\ContainerConfig;
 use Duyler\DI\ContainerService;
 use Duyler\DI\Event\ContainerEvent;
 use Duyler\DI\Event\ContainerEvents;
@@ -370,6 +373,34 @@ final class CharacterizationTest extends TestCase
             );
         }
     }
+
+    #[Test]
+    public function lazy_attribute_overrides_explicit_bind_without_scan(): void
+    {
+        $config = new ContainerConfig();
+        $config->withBind([LazyShieldInterface::class => LazyShieldExplicit::class]);
+        $container = new Container($config);
+
+        $container->get(LazyShieldAttribute::class);
+        $resolved = $container->get(LazyShieldInterface::class);
+
+        self::assertSame(LazyShieldAttribute::class, $resolved::class);
+    }
+
+    #[Test]
+    public function attribute_tags_invisible_to_tagged_before_first_get(): void
+    {
+        $container = new Container();
+
+        self::assertSame([], $container->tagged('lazy.shield.tag'));
+
+        $container->get(LazyShieldTagged::class);
+
+        $resolved = $container->tagged('lazy.shield.tag');
+
+        self::assertCount(1, $resolved);
+        self::assertSame(LazyShieldTagged::class, $resolved[0]::class);
+    }
 }
 
 class CharacterizationSimpleService {}
@@ -564,3 +595,13 @@ class CharacterizationScalarService
         private readonly string $name,
     ) {}
 }
+
+interface LazyShieldInterface {}
+
+class LazyShieldExplicit implements LazyShieldInterface {}
+
+#[Bind(LazyShieldInterface::class)]
+class LazyShieldAttribute implements LazyShieldInterface {}
+
+#[Tag('lazy.shield.tag')]
+class LazyShieldTagged {}
