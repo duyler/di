@@ -27,6 +27,9 @@ class ContainerConfig
 
     private bool $strictResolution = false;
 
+    /** @var array<string> */
+    private array $scanPaths = [];
+
     /** @param array<string, string> $bind */
     public function withBind(array $bind): ContainerConfig
     {
@@ -138,5 +141,23 @@ class ContainerConfig
     public function isStrictResolution(): bool
     {
         return $this->strictResolution;
+    }
+
+    /**
+     * @param string ...$paths
+    */
+    public function withScanPaths(string ...$paths): ContainerConfig
+    {
+        $this->scanPaths = array_merge($this->scanPaths, $paths);
+
+        return $this;
+    }
+
+    /**
+     * @return array<string>
+    */
+    public function getScanPaths(): array
+    {
+        return $this->scanPaths;
     }
 }
