@@ -133,4 +133,32 @@ class ContainerConfigTest extends TestCase
         $this->assertEmpty($config->getProviders());
         $this->assertEmpty($config->getDefinitions());
     }
+
+    #[Test]
+    public function scan_paths_default_empty(): void
+    {
+        $config = new ContainerConfig();
+
+        $this->assertSame([], $config->getScanPaths());
+    }
+
+    #[Test]
+    public function with_scan_paths_accumulates(): void
+    {
+        $config = new ContainerConfig();
+        $config->withScanPaths('/a');
+        $config->withScanPaths('/b', '/c');
+
+        $this->assertSame(['/a', '/b', '/c'], $config->getScanPaths());
+    }
+
+    #[Test]
+    public function with_scan_paths_accepts_array_spread(): void
+    {
+        $dirs = ['/x', '/y'];
+        $config = new ContainerConfig();
+        $config->withScanPaths(...$dirs);
+
+        $this->assertSame(['/x', '/y'], $config->getScanPaths());
+    }
 }
